@@ -131,13 +131,13 @@ const CreationPreview = ({
                       {items?.map(itemId => {
                         const ingredientNames = {
                           'thin-crust': 'Thin Crust', 'thick-crust': 'Thick Crust', 'gluten-free': 'Gluten-Free', 'cauliflower': 'Cauliflower',
-                          'tomato': 'Tomato', 'white': 'White', 'pesto': 'Pesto', 'bbq': 'BBQ',
+                          'tomato-pizza': 'Tomato', 'white': 'White', 'pesto': 'Pesto', 'bbq': 'BBQ',
                           'mozzarella': 'Mozzarella', 'cheddar': 'Cheddar', 'vegan-cheese': 'Vegan', 'goat-cheese': 'Goat',
                           'pepperoni': 'Pepperoni', 'mushrooms': 'Mushrooms', 'bell-peppers': 'Peppers', 'olives': 'Olives', 'chicken': 'Chicken', 'bacon': 'Bacon',
                           'brioche': 'Brioche', 'whole-wheat': 'Wheat', 'gluten-free-bun': 'GF Bun', 'lettuce-wrap': 'Lettuce Wrap',
                           'beef': 'Beef', 'turkey': 'Turkey', 'plant-based': 'Plant-Based', 'black-bean': 'Black Bean',
                           'american': 'American', 'swiss': 'Swiss', 'vegan-cheese-slice': 'Vegan', 'blue-cheese': 'Blue',
-                          'lettuce': 'Lettuce', 'tomato': 'Tomato', 'onion': 'Onion', 'pickles': 'Pickles', 'bacon-burger': 'Bacon', 'avocado': 'Avocado'
+                          'lettuce': 'Lettuce', 'tomato-burger': 'Tomato', 'onion': 'Onion', 'pickles': 'Pickles', 'bacon-burger': 'Bacon', 'avocado': 'Avocado'
                         };
                         
                         return (

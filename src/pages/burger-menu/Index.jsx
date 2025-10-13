@@ -328,8 +328,8 @@ const BurgerMenu = () => {
                 Burger Menu
               </h1>
               <p className="text-lg text-text-secondary max-w-2xl mx-auto">
-                Discover our signature burgers crafted with premium ingredients. From classic beef to plant-based delights, 
-                every burger is customizable to match your dietary preferences.
+                Descúbre nuestras hamburguesas elaboradas con ingredientes premium. Desde carne de res clásica hasta delicias a base de plantas,
+                cada hamburguesa es personalizable para adaptarse a tus preferencias dietéticas.
               </p>
             </div>
 

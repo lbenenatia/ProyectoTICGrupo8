@@ -10,31 +10,31 @@ const HeroSection = () => {
   const heroSlides = [
     {
       id: 1,
-      title: "Build Your Perfect Pizza",
-      subtitle: "Every Diet, Every Craving, Every Size",
-      description: "From gluten-free bases to plant-based proteins, create your masterpiece with our premium ingredients.",
+      title: "Arma tu pizza perfecta",
+      subtitle: "Cada dieta, Cada antojo, Cada tamaño",
+      description: "Desde bases sin gluten hasta proteínas a base de plantas, crea tu obra maestra con nuestros ingredientes premium.",
       image: "https://images.pexels.com/photos/315755/pexels-photo-315755.jpeg?auto=compress&cs=tinysrgb&w=800",
-      cta: "Build Pizza",
+      cta: "Arma tu pizza",
       ctaLink: "/build-your-own",
-      badge: "Gluten-Free Available"
+      badge: "Disponible sin gluten"
     },
     {
       id: 2,
-      title: "Craft Your Dream Burger",
-      subtitle: "Custom Crafted, Dietary Trusted",
-      description: "Artisanal buns, premium patties, and endless customization options for every dietary preference.",
+      title: "Arma tu hamburguesa soñada",
+      subtitle: "Personalizada y confiable para tu dieta",
+      description: "Pan artesanal, hamburguesas premium e incontables opciones de personalización para cada preferencia dietética.",
       image: "https://images.pexels.com/photos/1639557/pexels-photo-1639557.jpeg?auto=compress&cs=tinysrgb&w=800",
-      cta: "Build Burger",
+      cta: "Arma tu hamburguesa",
       ctaLink: "/build-your-own",
-      badge: "Plant-Based Options"
+      badge: "Opciones a base de plantas"
     },
     {
       id: 3,
-      title: "Your Perfect Bite, Guaranteed",
-      subtitle: "Premium Fast-Casual Excellence",
-      description: "Experience the evolution of comfort food with our artisanal quality and dietary inclusivity.",
+      title: "Comida rápida premium, a tu manera",
+      subtitle: "Excelencia Premium Rápido-Casual",
+      description: "Experimenta la evolución de la comida reconfortante con nuestra calidad artesanal e inclusividad dietética.",
       image: "https://images.pexels.com/photos/1566837/pexels-photo-1566837.jpeg?auto=compress&cs=tinysrgb&w=800",
-      cta: "Order Now",
+      cta: "Has tu pedido",
       ctaLink: "/order-delivery",
       badge: "Keto Friendly"
     }
@@ -145,14 +145,6 @@ const HeroSection = () => {
             <Icon name="ChevronRight" size={20} />
           </button>
         </div>
-      </div>
-      {/* Quick Access Floating Button */}
-      <div className="absolute bottom-8 right-8 z-20">
-        <Link to="/build-your-own">
-          <Button variant="default" size="lg" iconName="Plus" iconPosition="left">
-            Quick Build
-          </Button>
-        </Link>
       </div>
     </section>
   );
