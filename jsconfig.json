@@ -1,7 +1,0 @@
-{
-  "compilerOptions": {
-    "baseUrl": "./src",
-    "types": [],
-    "skipLibCheck": true
-  }
-}
