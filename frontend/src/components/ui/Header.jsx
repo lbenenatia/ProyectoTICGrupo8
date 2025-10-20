@@ -4,6 +4,7 @@ import Icon from '../AppIcon';
 import Button from './Button';
 import { useAuth } from 'context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useCart } from 'context/CartContext';
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -29,6 +30,9 @@ const Header = () => {
 
   const { user, logout, loading } = useAuth();
   const navigate = useNavigate();
+
+  const { items } = useCart();
+  const cartCount = items?.length ?? 0;
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-border shadow-warm-sm">
@@ -71,9 +75,11 @@ const Header = () => {
 
         {/* Desktop Actions */}
         <div className="hidden lg:flex items-center space-x-3">
-          <Button variant="ghost" size="sm" iconName="ShoppingCart" iconPosition="left">
-            Carrito (0)
-          </Button>
+          <Link to="/cart" className="inline-flex">
+            <Button variant="ghost" size="sm" iconName="ShoppingCart" iconPosition="left">
+              ({cartCount})
+            </Button>
+          </Link>
           {user ? (
             <div className="flex items-center space-x-2">
               <Link

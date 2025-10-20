@@ -161,11 +161,11 @@ const BuildYourOwn = () => {
           {/* Page Header */}
           <div className="text-center mb-8">
             <h1 className="text-4xl lg:text-5xl font-playfair font-semibold text-text-primary mb-4">
-              Build Your Own Creation
+              Crea Tu Propia Pizza o Hamburguesa
             </h1>
             <p className="text-lg text-text-secondary max-w-2xl mx-auto">
-              Unleash your creativity! Design the perfect pizza or burger with our interactive builder. 
-              Every ingredient, every size, exactly your way.
+              ¡Desata tu creatividad! Diseña la pizza o hamburguesa perfecta con nuestro constructor interactivo.
+              Cada ingrediente, cada tamaño, exactamente a tu manera.
             </p>
           </div>
 

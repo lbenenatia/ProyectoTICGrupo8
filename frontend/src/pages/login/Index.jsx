@@ -12,39 +12,42 @@ export default function LoginPage() {
   const location = useLocation();
   const { login, loading } = useAuth();
 
-  const from = location.state?.from?.pathname || "/account-dashboard";
+  const from = location.state?.from?.pathname || "/homepage";
 
-async function handleSubmit(e) {
-  e.preventDefault();
-  setError(null);
-
-  try {
-    const response = await fetch("http://localhost:4028/api/users/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || "Error al iniciar sesión");
-    }
-
-    const user = await response.json();
-    console.log("Usuario autenticado:", user);
-
-    // Podés guardar al usuario si tenés un contexto global
-    // localStorage.setItem("user", JSON.stringify(user));
-
-    console.log("Login correcto, redirigiendo...");
-    navigate("/");
-  } catch (err) {
-    setError(err.message || "No se pudo iniciar sesión");
+  function LoginPage() {
+  const { login } = useAuth();
+  const navigate = useNavigate(); 
   }
 
-  console.log("Login completo, navegando...");
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError(null);
 
-}
+    try {
+      const response = await fetch("http://localhost:4028/api/users/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Error al iniciar sesión");
+      }
+
+      const data = await response.json();
+
+      const user = data.user ?? data;
+      localStorage.setItem('user', JSON.stringify(user));
+      if (data.token) localStorage.setItem('token', data.token);
+      console.log("Usuario autenticado:", user);
+
+      login(user);
+      navigate(from, { replace: true });
+    } catch (err) {
+      setError(err.message || "No se pudo iniciar sesión");
+    }
+  }
 
   return (
     <main className="min-h-screen flex items-center justify-center p-4">

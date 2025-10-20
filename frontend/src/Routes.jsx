@@ -7,7 +7,7 @@ import BurgerMenu from './pages/burger-menu/Index';
 import PizzaMenu from './pages/pizza-menu/Index';
 import AccountDashboard from './pages/account-dashboard/Index';
 import BuildYourOwn from './pages/build-your-own/Index';
-import OrderDeliveryPage from './pages/order-delivery/Index';
+import CartPage from './pages/order-delivery/Index';
 import RegisterPage from './pages/register/Index';
 import RequireAuth from './components/RequireAuth';
 import Homepage from './pages/homepage/Index';
@@ -27,8 +27,8 @@ const Routes = () => {
             <Route path="/burger-menu" element={<BurgerMenu />} />
             <Route path="/pizza-menu" element={<PizzaMenu />} />
             <Route path="/account-dashboard" element={<AccountDashboard />} />
-            <Route path="/build-your-own" element={<RequireAuth><BuildYourOwn /></RequireAuth>} />
-            <Route path="/order-delivery" element={<RequireAuth><OrderDeliveryPage /></RequireAuth>} />
+            <Route path="/build-your-own" element={<BuildYourOwn />} />
+            <Route path="/order-delivery" element={<RequireAuth><CartPage /></RequireAuth>} />
             <Route path="/homepage" element={<Homepage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />

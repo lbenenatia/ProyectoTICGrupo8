@@ -247,10 +247,10 @@ const OrderDeliveryPage = () => {
           <div className="max-w-7xl mx-auto px-4 lg:px-6">
             <div className="text-center">
               <h1 className="text-3xl lg:text-4xl font-bold text-text-primary mb-4">
-                Order & Delivery
+                Mi Carrito
               </h1>
               <p className="text-lg text-text-secondary max-w-2xl mx-auto">
-                Complete your order, track delivery, and manage your food preferences all in one place
+                Completa tu pedido, rastrea la entrega y gestiona tus preferencias de comida todo en un solo lugar
               </p>
             </div>
           </div>

@@ -53,7 +53,7 @@ const PizzaMenu = () => {
       id: 2,
       name: "Gluten-Free Veggie Supreme",
       description: "Cauliflower crust topped with bell peppers, mushrooms, red onions, black olives, and dairy-free cheese",
-      image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop",
+      image: "https://unsplash.com/es/fotos/una-pizza-encima-de-una-mesa-de-madera-B-vBJzlAWLg",
       basePrice: 18.99,
       rating: 4.9,
       reviews: 187,
