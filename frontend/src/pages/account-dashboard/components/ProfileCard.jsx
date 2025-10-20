@@ -28,18 +28,8 @@ const ProfileCard = ({ user, onEditProfile }) => {
           </div>
         </div>
         <Button variant="outline" size="sm" onClick={onEditProfile} iconName="Edit2" iconPosition="left">
-          Edit
+          Editar
         </Button>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="text-center p-3 bg-muted rounded-lg">
-          <div className="text-2xl font-bold text-primary">{user?.totalOrders}</div>
-          <div className="text-sm text-text-secondary">Total Orders</div>
-        </div>
-        <div className="text-center p-3 bg-muted rounded-lg">
-          <div className="text-2xl font-bold text-accent">{user?.loyaltyPoints}</div>
-          <div className="text-sm text-text-secondary">Loyalty Points</div>
-        </div>
       </div>
     </div>
   );

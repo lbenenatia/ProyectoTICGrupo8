@@ -15,9 +15,9 @@ const FavoriteItems = ({ favorites, onAddToCart, onRemoveFavorite, onCustomize }
   return (
     <div className="bg-card rounded-lg p-6 shadow-warm">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-text-primary">Favorite Items</h3>
+        <h3 className="text-lg font-semibold text-text-primary">Favoritos</h3>
         <Button variant="ghost" size="sm" iconName="Settings">
-          Manage
+          Administrar
         </Button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -77,7 +77,7 @@ const FavoriteItems = ({ favorites, onAddToCart, onRemoveFavorite, onCustomize }
                     onClick={() => onCustomize(item?.id)}
                     iconName="Edit2"
                   >
-                    Modify
+                    Modificar
                   </Button>
                 )}
                 <Button
@@ -86,7 +86,7 @@ const FavoriteItems = ({ favorites, onAddToCart, onRemoveFavorite, onCustomize }
                   onClick={() => onAddToCart(item?.id)}
                   iconName="Plus"
                 >
-                  Add
+                  Agregar
                 </Button>
               </div>
             </div>

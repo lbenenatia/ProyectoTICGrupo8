@@ -25,9 +25,9 @@ const RecentOrders = ({ orders, onReorder, onViewDetails }) => {
   return (
     <div className="bg-card rounded-lg p-6 shadow-warm">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-text-primary">Recent Orders</h3>
+        <h3 className="text-lg font-semibold text-text-primary">Pedidos recientes</h3>
         <Button variant="ghost" size="sm" iconName="ExternalLink">
-          View All
+          Ver todos
         </Button>
       </div>
       <div className="space-y-4">
@@ -49,7 +49,7 @@ const RecentOrders = ({ orders, onReorder, onViewDetails }) => {
                 </div>
                 <div>
                   <h4 className="font-medium text-text-primary">{order?.name}</h4>
-                  <p className="text-sm text-text-secondary">Order #{order?.id}</p>
+                  <p className="text-sm text-text-secondary">Pedido #{order?.id}</p>
                   <p className="text-sm text-text-secondary">{order?.date}</p>
                 </div>
               </div>
@@ -68,10 +68,6 @@ const RecentOrders = ({ orders, onReorder, onViewDetails }) => {
                   <Icon name="Users" size={14} />
                   <span>{order?.items} items</span>
                 </div>
-                <div className="flex items-center space-x-1">
-                  <Icon name="Star" size={14} />
-                  <span>{order?.points} pts earned</span>
-                </div>
               </div>
               <div className="flex items-center space-x-2">
                 <Button 
@@ -80,7 +76,7 @@ const RecentOrders = ({ orders, onReorder, onViewDetails }) => {
                   onClick={() => onViewDetails(order?.id)}
                   iconName="Eye"
                 >
-                  Details
+                  Detalles
                 </Button>
                 <Button 
                   variant="default" 
@@ -88,7 +84,7 @@ const RecentOrders = ({ orders, onReorder, onViewDetails }) => {
                   onClick={() => onReorder(order?.id)}
                   iconName="RotateCcw"
                 >
-                  Reorder
+                  Volver a pedir
                 </Button>
               </div>
             </div>

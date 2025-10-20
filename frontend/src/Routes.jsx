@@ -7,7 +7,7 @@ import BurgerMenu from './pages/burger-menu/Index';
 import PizzaMenu from './pages/pizza-menu/Index';
 import AccountDashboard from './pages/account-dashboard/Index';
 import BuildYourOwn from './pages/build-your-own/Index';
-import CartPage from './pages/order-delivery/Index';
+import CartPage from './pages/cart/Index';
 import RegisterPage from './pages/register/Index';
 import RequireAuth from './components/RequireAuth';
 import Homepage from './pages/homepage/Index';
