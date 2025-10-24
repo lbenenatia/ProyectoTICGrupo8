@@ -7,33 +7,16 @@ import DeliveryOptionsCard from './components/DeliveryOptionsCard';
 import PaymentMethodCard from './components/PaymentMethodCard';
 import OrderTrackingCard from './components/OrderTrackingCard';
 import QuickReorderCard from './components/QuickReorderCard';
-import GroupOrderCard from './components/GroupOrderCard';
+import { useCart } from '../../context/CartContext';
 
-const OrderDeliveryPage = () => {
+const CartPage = () => {
   const [activeTab, setActiveTab] = useState('new-order');
   const [selectedDeliveryOption, setSelectedDeliveryOption] = useState('delivery');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('card');
   const [deliveryAddress, setDeliveryAddress] = useState(null);
 
   // Mock data for current cart
-  const [cartItems] = useState([
-    {
-      id: 1,
-      name: "Margherita Pizza",
-      size: "Large",
-      customizations: "Extra cheese, Gluten-free base",
-      price: 18.99,
-      image: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=400"
-    },
-    {
-      id: 2,
-      name: "Classic Cheeseburger",
-      size: "Regular",
-      customizations: "No pickles, Extra bacon",
-      price: 12.99,
-      image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400"
-    }
-  ]);
+  const { items: cartItems, total: cartTotal } = useCart();
 
   // Mock data for saved cards
   const [savedCards] = useState([
@@ -121,54 +104,6 @@ const OrderDeliveryPage = () => {
     }
   ]);
 
-  // Mock data for group order
-  const [groupOrder] = useState({
-    id: "GRP-2025-001",
-    organizer: "user-1",
-    deadline: "2025-01-07T13:00:00Z",
-    deliveryAddress: "123 Main St, New York, NY 10001",
-    paymentMethod: "Split evenly",
-    members: [
-      {
-        id: "user-1",
-        name: "You",
-        email: "you@example.com",
-        status: "completed",
-        items: [
-          {
-            id: 1,
-            name: "Margherita Pizza",
-            customizations: "Large, Extra cheese",
-            price: 18.99,
-            image: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=400"
-          }
-        ]
-      },
-      {
-        id: "user-2",
-        name: "Sarah Wilson",
-        email: "sarah@example.com",
-        status: "completed",
-        items: [
-          {
-            id: 2,
-            name: "BBQ Chicken Pizza",
-            customizations: "Medium, Extra BBQ sauce",
-            price: 16.99,
-            image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400"
-          }
-        ]
-      },
-      {
-        id: "user-3",
-        name: "John Davis",
-        email: "john@example.com",
-        status: "pending",
-        items: []
-      }
-    ]
-  });
-
   // Set default delivery address
   useEffect(() => {
     setDeliveryAddress({
@@ -181,7 +116,7 @@ const OrderDeliveryPage = () => {
   }, []);
 
   const calculateOrderTotals = () => {
-    const subtotal = cartItems?.reduce((sum, item) => sum + item?.price, 0);
+    const subtotal = cartItems?.reduce((sum, item) => sum + (item.product?.price || 0) * (item.quantity || 1), 0);
     const deliveryFee = selectedDeliveryOption === 'delivery' ? 2.99 : 0;
     const tax = subtotal * 0.08;
     const total = subtotal + deliveryFee + tax;
@@ -217,23 +152,10 @@ const OrderDeliveryPage = () => {
     console.log('Contact driver:', driver);
   };
 
-  const handleInviteMembers = (emails) => {
-    console.log('Invite members:', emails);
-  };
-
-  const handleRemoveMember = (memberId) => {
-    console.log('Remove member:', memberId);
-  };
-
-  const handleFinalizeGroupOrder = () => {
-    console.log('Finalize group order');
-  };
-
   const tabs = [
     { id: 'new-order', label: 'New Order', icon: 'ShoppingCart' },
     { id: 'tracking', label: 'Order Tracking', icon: 'MapPin' },
-    { id: 'reorder', label: 'Quick Reorder', icon: 'RotateCcw' },
-    { id: 'group', label: 'Group Order', icon: 'Users' }
+    { id: 'reorder', label: 'Quick Reorder', icon: 'RotateCcw' }
   ];
 
   const { subtotal, deliveryFee, tax, total } = calculateOrderTotals();
@@ -250,7 +172,7 @@ const OrderDeliveryPage = () => {
                 Mi Carrito
               </h1>
               <p className="text-lg text-text-secondary max-w-2xl mx-auto">
-                Completa tu pedido, rastrea la entrega y gestiona tus preferencias de comida todo en un solo lugar
+                Completá tu pedido, rastreá la entrega y gestioná tus preferencias de comida todo en un solo lugar!
               </p>
             </div>
           </div>
@@ -320,7 +242,7 @@ const OrderDeliveryPage = () => {
                     onClick={handlePlaceOrder}
                     disabled={cartItems?.length === 0}
                   >
-                    Place Order - ${total?.toFixed(2)}
+                    Hacer pedido - ${total?.toFixed(2)}
                   </Button>
                 </div>
               </div>
@@ -364,40 +286,6 @@ const OrderDeliveryPage = () => {
                 />
               </div>
             )}
-
-            {/* Group Order Tab */}
-            {activeTab === 'group' && (
-              <div className="max-w-4xl mx-auto">
-                <GroupOrderCard
-                  groupOrder={groupOrder}
-                  onInviteMembers={handleInviteMembers}
-                  onRemoveMember={handleRemoveMember}
-                  onFinalizeOrder={handleFinalizeGroupOrder}
-                />
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* Quick Actions Footer */}
-        <section className="bg-card border-t border-border py-8">
-          <div className="max-w-7xl mx-auto px-4 lg:px-6">
-            <div className="text-center mb-6">
-              <h3 className="text-xl font-semibold text-text-primary mb-2">Need Help?</h3>
-              <p className="text-text-secondary">Our support team is here to assist you</p>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <Button variant="outline" iconName="MessageCircle" iconPosition="left">
-                Live Chat Support
-              </Button>
-              <Button variant="outline" iconName="Phone" iconPosition="left">
-                Call (555) 123-4567
-              </Button>
-              <Button variant="outline" iconName="Mail" iconPosition="left">
-                Email Support
-              </Button>
-            </div>
           </div>
         </section>
       </main>
@@ -405,4 +293,4 @@ const OrderDeliveryPage = () => {
   );
 };
 
-export default OrderDeliveryPage;
+export default CartPage;

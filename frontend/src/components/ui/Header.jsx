@@ -15,7 +15,6 @@ const Header = () => {
     { name: 'Menú de Pizzas', path: '/pizza-menu', icon: 'Pizza' },
     { name: 'Menú de Hamburguesas', path: '/burger-menu', icon: 'Hamburger' },
     { name: 'Creá tu pedido', path: '/build-your-own', icon: 'ChefHat' },
-    { name: 'Delivery', path: '/order-delivery', icon: 'Truck' },
   ];
 
   const secondaryItems = [
@@ -38,7 +37,7 @@ const Header = () => {
     <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-border shadow-warm-sm">
       <div className="flex items-center justify-between h-16 px-4 lg:px-6">
         {/* Logo */}
-        <Link to="/homepage" className="flex items-center space-x-2 hover:opacity-80 transition-quick">
+        <Link to="/homepage" className="flex items-center space-x-2 hover:opacity-80 transition-quick mr-8">
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
             <svg
               viewBox="0 0 24 24"
@@ -72,6 +71,8 @@ const Header = () => {
             </Link>
           ))}
         </nav>
+
+        <div className="flex-grow"></div>
 
         {/* Desktop Actions */}
         <div className="hidden lg:flex items-center space-x-3">

@@ -27,11 +27,11 @@ const AccountDashboard = () => {
   // Mock user data
   // Use authenticated user for profile header when available
   const userData = {
-    name: user?.name,
-    email: user?.email,
-    location: user?.location,
-    avatar: user?.avatar || "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
-    memberSince: user?.memberSince
+    name: user.name,
+    email: user.email,
+    location: user.location,
+    avatar: user.avatar,
+    memberSince: user.createdAt
   };
 
   // Mock recent orders

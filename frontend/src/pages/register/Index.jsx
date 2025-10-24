@@ -21,7 +21,7 @@ export default function RegisterPage() {
         name,
         surname,
         email,
-        birthDate,          // viene como "YYYY-MM-DD" desde el input date
+        birthDate,
         address,
         passwordHash: password,
         isActive: true,

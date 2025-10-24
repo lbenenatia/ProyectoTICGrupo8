@@ -1,4 +1,3 @@
-// Small fetch wrapper to manage Authorization header using a stored token.
 const STORAGE_KEY = 'authToken';
 let token = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
 
@@ -11,14 +10,15 @@ export function setAuthToken(newToken) {
 }
 
 export async function fetchJson(path, options = {}) {
-  const base = import.meta.env.VITE_API_BASE_URL || '';
+  const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+  const url = path.startsWith('/api') ? `${base}${path}` : `${base}/api${path}`;
   const headers = {
     'Content-Type': 'application/json',
     ...(options.headers || {}),
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(base + path, {
+  const res = await fetch(url, {
     ...options,
     headers,
   });

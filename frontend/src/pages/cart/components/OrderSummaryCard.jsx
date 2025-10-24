@@ -7,9 +7,18 @@ const OrderSummaryCard = ({ items, subtotal, deliveryFee, tax, total, onModifyIt
   return (
     <div className="bg-card rounded-lg border border-border p-6 shadow-warm">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-text-primary">Order Summary</h3>
+        <h3 className="text-lg font-semibold text-text-primary">Resumen del Pedido</h3>
         <span className="text-sm text-text-secondary">{items?.length} items</span>
       </div>
+      <p className="text-xs text-text-secondary mt-1">
+        {items.size} • {items.customizations}
+      </p>
+      {items.ingredients?.length > 0 && (
+        <p className="text-xs text-text-secondary">
+          Ingredientes: {items.ingredients.join(", ")}
+        </p>
+      )}
+
       <div className="space-y-4 mb-6">
         {items?.map((item) => (
           <div key={item?.id} className="flex items-start space-x-3 p-3 bg-background rounded-md">
@@ -50,12 +59,8 @@ const OrderSummaryCard = ({ items, subtotal, deliveryFee, tax, total, onModifyIt
           <span className="text-text-primary">${subtotal?.toFixed(2)}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-text-secondary">Delivery Fee</span>
+          <span className="text-text-secondary">Envío</span>
           <span className="text-text-primary">${deliveryFee?.toFixed(2)}</span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-text-secondary">Tax</span>
-          <span className="text-text-primary">${tax?.toFixed(2)}</span>
         </div>
         <div className="flex justify-between text-lg font-semibold border-t border-border pt-2">
           <span className="text-text-primary">Total</span>

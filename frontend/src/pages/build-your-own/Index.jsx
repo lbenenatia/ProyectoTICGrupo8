@@ -8,6 +8,7 @@ import CreationPreview from './components/CreationPreview';
 import OrderSummary from './components/OrderSummary';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
+import { useCart } from '../../context/CartContext';
 
 const BuildYourOwn = () => {
   const [selectedType, setSelectedType] = useState('pizza');
@@ -263,54 +264,6 @@ const BuildYourOwn = () => {
                 onAddToCart={handleAddToCart}
                 onSaveRecipe={handleSaveRecipe}
               />
-            </div>
-          </div>
-
-          {/* Community Section */}
-          <div className="mt-16 bg-card rounded-lg p-8 shadow-warm">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-semibold text-text-primary mb-4">Join the Creative Community</h2>
-              <p className="text-text-secondary">
-                Share your creations, discover new combinations, and compete in monthly challenges!
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Icon name="Users" size={32} className="text-primary" />
-                </div>
-                <h3 className="font-semibold text-text-primary mb-2">Share & Discover</h3>
-                <p className="text-sm text-text-secondary">
-                  Share your custom recipes and discover amazing combinations from other food creators
-                </p>
-              </div>
-
-              <div className="text-center">
-                <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Icon name="Trophy" size={32} className="text-accent" />
-                </div>
-                <h3 className="font-semibold text-text-primary mb-2">Monthly Challenges</h3>
-                <p className="text-sm text-text-secondary">
-                  Compete in themed creation challenges and win exclusive rewards and recognition
-                </p>
-              </div>
-
-              <div className="text-center">
-                <div className="w-16 h-16 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Icon name="Star" size={32} className="text-success" />
-                </div>
-                <h3 className="font-semibold text-text-primary mb-2">Earn Rewards</h3>
-                <p className="text-sm text-text-secondary">
-                  Get points for popular recipes and unlock special ingredients and discounts
-                </p>
-              </div>
-            </div>
-
-            <div className="text-center mt-8">
-              <Button variant="outline" iconName="ArrowRight" iconPosition="right">
-                Explore Community Creations
-              </Button>
             </div>
           </div>
         </div>

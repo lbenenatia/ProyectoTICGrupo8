@@ -28,7 +28,7 @@ const Routes = () => {
             <Route path="/pizza-menu" element={<PizzaMenu />} />
             <Route path="/account-dashboard" element={<AccountDashboard />} />
             <Route path="/build-your-own" element={<BuildYourOwn />} />
-            <Route path="/order-delivery" element={<RequireAuth><CartPage /></RequireAuth>} />
+            <Route path="/cart" element={<RequireAuth><CartPage /></RequireAuth>} />
             <Route path="/homepage" element={<Homepage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />

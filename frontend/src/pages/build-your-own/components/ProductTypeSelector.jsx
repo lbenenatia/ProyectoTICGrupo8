@@ -8,21 +8,19 @@ const ProductTypeSelector = ({ selectedType, onTypeChange }) => {
       id: 'pizza',
       name: 'Pizza',
       icon: 'Pizza',
-      description: 'Build your perfect pizza from scratch',
-      basePrice: 12.99
+      description: 'Crea tu pizza perfecta desde cero',
     },
     {
       id: 'burger',
-      name: 'Burger',
-      icon: 'Beef',
-      description: 'Create your dream burger combination',
-      basePrice: 9.99
+      name: 'Hamburguesa',
+      icon: 'Hamburger',
+      description: 'Crea tu hamburguesa perfecta desde cero',
     }
   ];
 
   return (
     <div className="bg-card rounded-lg p-6 shadow-warm">
-      <h2 className="text-xl font-semibold text-text-primary mb-4">Choose Your Canvas</h2>
+      <h2 className="text-xl font-semibold text-text-primary mb-4">Elige tu producto</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {productTypes?.map((type) => (
           <div
@@ -41,7 +39,6 @@ const ProductTypeSelector = ({ selectedType, onTypeChange }) => {
               </div>
               <div>
                 <h3 className="font-semibold text-text-primary">{type?.name}</h3>
-                <p className="text-sm text-text-secondary">Starting at ${type?.basePrice}</p>
               </div>
             </div>
             <p className="text-sm text-text-secondary">{type?.description}</p>

@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext } from "react";
+import React, { createContext, useState, useEffect, useContext } from "react";
 import { fetchJson, setAuthToken } from '../lib/api';
 
 const AuthContext = createContext();
@@ -17,6 +17,14 @@ export function AuthProvider({ children }) {
 
   const [loading, setLoading] = useState(false);
 
+    useEffect(() => {
+    if (user) {
+      localStorage.setItem("user", JSON.stringify(user));
+    } else {
+      localStorage.removeItem("user");
+    }
+  }, [user]);
+
   // Real API-backed login
   async function login({ email, password }) {
     if (!email || !password) throw new Error("Email and password are required");
@@ -27,12 +35,16 @@ export function AuthProvider({ children }) {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       });
+
       if (!data?.token) throw new Error('Invalid login response');
+
       setAuthToken(data.token);
       localStorage.setItem('authToken', data.token);
-      setUser(data.user || { email });
-      localStorage.setItem('user', JSON.stringify(data.user || { email }));
-      return data.user;
+      
+      const userData = data.user || { email };
+      setUser(userData);
+      localStorage.setItem('user', JSON.stringify(userData));
+      return userData;
     } finally {
       setLoading(false);
     }
