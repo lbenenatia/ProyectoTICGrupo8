@@ -1,41 +1,39 @@
-version: '3.8'
-
 services:
   db:
-    image: postgres:15
-    restart: always
-    container_name: proyectotic-db
+    image: postgres:16
+    container_name: pizzumburgum-db
     environment:
-      POSTGRES_DB: proyectotic
-      POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: pizzumburgum
+      POSTGRES_USER: pizzumburgum
+      POSTGRES_PASSWORD: admin123
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: proyectotic-backend
-    ports:
-      - "4028:8080"
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/proyectotic
-      SPRING_DATASOURCE_USERNAME: myuser
-      SPRING_DATASOURCE_PASSWORD: mypassword
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      SPRING_PROFILES_ACTIVE: docker
+    container_name: pizzumburgum-backend
     depends_on:
-      - db
-    restart: always
-    networks:
-      - proyectotic-net
+      db:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 4028
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/pizzumburgum
+      SPRING_DATASOURCE_USERNAME: pizzumburgum
+      SPRING_DATASOURCE_PASSWORD: admin123
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      CORS_ORIGINS: http://localhost:5173
+    ports:
+      - "4028:4028"
 
 volumes:
-  postgres_data:
-
-networks:
-  proyectotic-net:
-    driver: bridge
+  db_data:
