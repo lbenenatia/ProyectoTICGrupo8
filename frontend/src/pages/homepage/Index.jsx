@@ -34,27 +34,9 @@ const Homepage = () => {
       <main className="pt-16">
         {/* Hero Section */}
         <HeroSection />
-        
-        {/* Dietary Filter Bar - Sticky */}
-        <DietaryFilterBar onFilterChange={handleDietaryFilterChange} />
-        
-        {/* Menu Highlights */}
-        <MenuHighlights />
-        
-        {/* Customization Preview */}
-        <CustomizationPreview />
-        
-        {/* Size & Value Comparison */}
-        <SizeValueSection />
-        
-        {/* Seasonal Menu Innovation */}
-        <SeasonalMenuSection />
-        
-        {/* Ingredient Stories */}
-        <IngredientStorySection />
-        
-        {/* Customer Testimonials */}
-        <TestimonialsSection />
+
+        {/*  */}
+      
       </main>
       {/* Footer */}
       <footer className="bg-text-primary text-white py-12">

@@ -12,8 +12,6 @@ const Header = () => {
 
   const navigationItems = [
     { name: 'Inicio', path: '/homepage', icon: 'Home' },
-    { name: 'Menú de Pizzas', path: '/pizza-menu', icon: 'Pizza' },
-    { name: 'Menú de Hamburguesas', path: '/burger-menu', icon: 'Hamburger' },
     { name: 'Creá tu pedido', path: '/build-your-own', icon: 'ChefHat' },
   ];
 

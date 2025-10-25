@@ -32,7 +32,7 @@ export default function RegisterPage() {
 
 
     try {
-      const response = await fetch("http://localhost:4028/api/users", {
+      const response = await fetch("http://localhost:4028/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(userData)
