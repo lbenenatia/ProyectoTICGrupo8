@@ -1,187 +1,361 @@
-import React, { useState } from 'react';
-import Button from '../../../components/ui/Button';
-import Input from '../../../components/ui/Input';
-import Select from '../../../components/ui/Select';
-import Icon from '../../../components/AppIcon';
+import React, { useState, useEffect } from "react";
+import Button from "../../../components/ui/Button";
+import Input from "../../../components/ui/Input";
+import Icon from "../../../components/AppIcon";
 
-const DeliveryOptionsCard = ({ selectedOption, onOptionChange, deliveryAddress, onAddressChange }) => {
+const DeliveryOptionsCard = ({
+  selectedOption,
+  onOptionChange,
+  deliveryAddress,
+  onAddressChange,
+}) => {
   const [showAddressForm, setShowAddressForm] = useState(false);
+  const [addresses, setAddresses] = useState([]);
+  const [form, setForm] = useState({
+    label: "",
+    street1: "",
+    street2: "",
+    number: "",
+    city: "",
+    state: "",
+    phone: "",
+  });
+  const [errors, setErrors] = useState({});
+  const [successMessage, setSuccessMessage] = useState("");
 
-  const deliveryOptions = [
-    {
-      id: 'delivery',
-      title: 'Delivery',
-      description: 'Get it delivered to your door',
-      icon: 'Truck',
-      time: '25-35 min',
-      fee: 2.99
-    },
-    {
-      id: 'pickup',
-      title: 'Pickup',
-      description: 'Pick up from our store',
-      icon: 'MapPin',
-      time: '15-20 min',
-      fee: 0
+  useEffect(() => {
+    const saved = localStorage.getItem("addresses");
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      setAddresses(parsed);
+      if (parsed.length > 0 && !deliveryAddress) onAddressChange(parsed[0]);
     }
-  ];
+  }, []);
 
-  const timeSlots = [
-    { value: 'asap', label: 'ASAP (25-35 min)' },
-    { value: '12:00', label: '12:00 PM' },
-    { value: '12:30', label: '12:30 PM' },
-    { value: '13:00', label: '1:00 PM' },
-    { value: '13:30', label: '1:30 PM' },
-    { value: '14:00', label: '2:00 PM' }
-  ];
+  useEffect(() => {
+    if (!successMessage) return;
+    const t = setTimeout(() => setSuccessMessage(""), 3000);
+    return () => clearTimeout(t);
+  }, [successMessage]);
+
+  const requiredFields = ["street1", "number", "city", "state", "phone"];
+
+  const validateForm = () => {
+    const newErrors = {};
+    requiredFields.forEach((field) => {
+      if (!form[field].trim()) newErrors[field] = true;
+    });
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validateInput = (name, value) => {
+    let regex;
+    switch (name) {
+      case "number":
+        regex = /^[0-9]*$/;
+        break;
+      case "phone":
+        regex = /^[0-9 ]*$/;
+        break;
+      case "city":
+      case "state":
+      case "street1":
+      case "street2":
+      case "label":
+        regex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9 ,.()-]*$/;
+        break;
+      default:
+        regex = /^[^<>%$#@!^*{}[\]\\|]*$/;
+    }
+    return regex.test(value);
+  };
+
+  const formatPhone = (value) => {
+    const digits = value.replace(/\D/g, "").slice(0, 9);
+    return digits.replace(/(\d{3})(?=\d)/g, "$1 ").trim();
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    const inputType = e.nativeEvent?.inputType;
+
+    if (!validateInput(name, value)) return;
+
+    let formatted = value;
+    if (name === "phone" && inputType !== "deleteContentBackward") {
+      formatted = formatPhone(value);
+    }
+
+    setForm((prev) => ({ ...prev, [name]: formatted }));
+
+    if (formatted.trim() !== "") {
+      setErrors((prev) => ({ ...prev, [name]: false }));
+    }
+  };
+
+  const handleSaveAddress = () => {
+    if (!validateForm()) {
+      setSuccessMessage("Completá todos los campos obligatorios.");
+      return;
+    }
+
+    const phoneDigits = form.phone.replace(/\D/g, "");
+    if (phoneDigits.length !== 9) {
+      setErrors((prev) => ({ ...prev, phone: true }));
+      setSuccessMessage("Ingresá un teléfono válido 9 dígitos.");
+      return;
+    }
+
+    const newAddress = { ...form, id: Date.now() };
+    const updated = [...addresses, newAddress];
+    setAddresses(updated);
+    localStorage.setItem("addresses", JSON.stringify(updated));
+    onAddressChange(newAddress);
+    setShowAddressForm(false);
+    setForm({
+      label: "",
+      street1: "",
+      street2: "",
+      number: "",
+      city: "",
+      state: "",
+      phone: "",
+    });
+    setErrors({});
+    setSuccessMessage("Dirección guardada correctamente.");
+  };
+
+  const handleDeleteAddress = (id) => {
+    const updated = addresses.filter((a) => a.id !== id);
+    setAddresses(updated);
+    localStorage.setItem("addresses", JSON.stringify(updated));
+    if (deliveryAddress?.id === id) onAddressChange(null);
+  };
+
+  const inputRing =
+    "ring-1 ring-border focus:ring-2 focus:ring-primary/60 focus:border-primary/60 rounded-md transition-shadow";
+  const errorRing =
+    "ring-1 ring-red-500 focus:ring-2 focus:ring-red-400 focus:border-red-400 rounded-md transition-shadow";
+
+  const Label = ({ text, required }) => (
+    <span className="font-medium text-text-primary">
+      {text}
+      {required && <span className="text-red-500 ml-0.5">*</span>}
+    </span>
+  );
 
   return (
     <div className="bg-card rounded-lg border border-border p-6 shadow-warm">
-      <h3 className="text-lg font-semibold text-text-primary mb-4">Delivery Options</h3>
+      <h3 className="text-lg font-semibold text-text-primary mb-4">
+        Opciones de entrega
+      </h3>
+
+      {/* Opciones Delivery / Pickup */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        {deliveryOptions?.map((option) => (
+        {[
+          {
+            id: "delivery",
+            title: "Delivery",
+            description: "Entrega a domicilio",
+            icon: "Truck",
+          },
+          {
+            id: "pickup",
+            title: "Retiro en local",
+            description: "Pasá a buscar tu pedido",
+            icon: "MapPin",
+          },
+        ].map((option) => (
           <div
-            key={option?.id}
+            key={option.id}
             className={`p-4 rounded-lg border-2 cursor-pointer transition-warm ${
-              selectedOption === option?.id
-                ? 'border-primary bg-primary/5' :'border-border hover:border-primary/50'
+              selectedOption === option.id
+                ? "border-primary bg-primary/5"
+                : "border-border hover:border-primary/50"
             }`}
-            onClick={() => onOptionChange(option?.id)}
+            onClick={() => {
+              onOptionChange(option.id);
+              setSuccessMessage("");
+            }}
           >
             <div className="flex items-center space-x-3">
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                selectedOption === option?.id ? 'bg-primary text-primary-foreground' : 'bg-muted'
-              }`}>
-                <Icon name={option?.icon} size={20} />
+              <div
+                className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                  selectedOption === option.id
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted"
+                }`}
+              >
+                <Icon name={option.icon} size={20} />
               </div>
               <div className="flex-1">
-                <h4 className="font-medium text-text-primary">{option?.title}</h4>
-                <p className="text-sm text-text-secondary">{option?.description}</p>
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-sm font-medium text-primary">{option?.time}</span>
-                  <span className="text-sm text-text-secondary">
-                    {option?.fee > 0 ? `$${option?.fee?.toFixed(2)}` : 'Free'}
-                  </span>
-                </div>
+                <h4 className="font-medium text-text-primary">{option.title}</h4>
+                <p className="text-sm text-text-secondary">
+                  {option.description}
+                </p>
               </div>
             </div>
           </div>
         ))}
       </div>
-      {selectedOption === 'delivery' && (
+
+      {/* Domicilios */}
+      {selectedOption === "delivery" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h4 className="font-medium text-text-primary">Delivery Address</h4>
+            <h4 className="font-medium text-text-primary">
+              Domicilios guardados
+            </h4>
             <Button
               variant="ghost"
               size="sm"
-              iconName="Plus"
-              onClick={() => setShowAddressForm(!showAddressForm)}
+              iconName={showAddressForm ? "X" : "Plus"}
+              onClick={() => {
+                setShowAddressForm(!showAddressForm);
+                setSuccessMessage("");
+              }}
             >
-              Add New
+              {showAddressForm ? "Cancelar" : "Agregar nuevo"}
             </Button>
           </div>
 
-          {deliveryAddress ? (
-            <div className="p-4 bg-background rounded-lg border border-border">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="font-medium text-text-primary">{deliveryAddress?.label}</p>
-                  <p className="text-sm text-text-secondary mt-1">{deliveryAddress?.address}</p>
-                  <p className="text-sm text-text-secondary">{deliveryAddress?.city}, {deliveryAddress?.state} {deliveryAddress?.zip}</p>
-                </div>
-                <Button variant="ghost" size="sm" iconName="Edit" />
-              </div>
-            </div>
-          ) : (
-            <div className="p-4 bg-background rounded-lg border border-border border-dashed">
-              <p className="text-text-secondary text-center">No delivery address selected</p>
-              <Button
-                variant="outline"
-                size="sm"
-                fullWidth
-                className="mt-2"
-                onClick={() => setShowAddressForm(true)}
+          {successMessage && (
+            <p
+              className={`text-sm font-medium ${
+                successMessage.startsWith("⚠️")
+                  ? "text-red-500"
+                  : "text-green-600"
+              }`}
+            >
+              {successMessage}
+            </p>
+          )}
+
+          {addresses.length > 0 ? (
+            addresses.map((addr) => (
+              <div
+                key={addr.id}
+                onClick={() => onAddressChange(addr)}
+                className={`p-4 bg-background rounded-lg border-2 cursor-pointer transition-all duration-200 flex justify-between items-start ${
+                  deliveryAddress?.id === addr.id
+                    ? "border-primary bg-primary/5 shadow-sm"
+                    : "border-border hover:border-primary/40"
+                }`}
               >
-                Add Delivery Address
+                <div className="flex-1">
+                  <p className="font-medium text-text-primary">
+                    {addr.label || "Domicilio"}
+                  </p>
+                  <p className="text-sm text-text-secondary">
+                    {addr.street1} {addr.number && `#${addr.number}`}
+                  </p>
+                  {addr.street2 && (
+                    <p className="text-sm text-text-secondary">
+                      Entre {addr.street2}
+                    </p>
+                  )}
+                  <p className="text-sm text-text-secondary">
+                    {addr.city}, {addr.state}
+                  </p>
+                  {addr.phone && (
+                    <p className="text-sm text-text-secondary">
+                      Tel: {addr.phone}
+                    </p>
+                  )}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="xs"
+                  iconName="Trash"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteAddress(addr.id);
+                  }}
+                />
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-text-secondary">
+              No hay domicilios guardados.
+            </p>
+          )}
+
+          {/* Formulario */}
+          {showAddressForm && (
+            <div className="space-y-4 p-4 bg-background rounded-lg border border-border mt-4">
+              <h5 className="font-medium text-text-primary">Nuevo domicilio</h5>
+
+              <Input
+                label={<Label text="Etiqueta" />}
+                name="label"
+                placeholder="Casa, trabajo..."
+                value={form.label}
+                onChange={handleInputChange}
+                className={inputRing}
+              />
+
+              <Input
+                label={<Label text="Calle 1" required />}
+                name="street1"
+                placeholder="Av. 18 de Julio"
+                value={form.street1}
+                onChange={handleInputChange}
+                className={errors.street1 ? errorRing : inputRing}
+              />
+
+              <Input
+                label={<Label text="Calle 2 (opcional)" />}
+                name="street2"
+                placeholder="Entre calles"
+                value={form.street2}
+                onChange={handleInputChange}
+                className={inputRing}
+              />
+
+              <Input
+                label={<Label text="Número" required />}
+                name="number"
+                placeholder="1234"
+                value={form.number}
+                onChange={handleInputChange}
+                className={errors.number ? errorRing : inputRing}
+              />
+
+              <Input
+                label={<Label text="Ciudad" required />}
+                name="city"
+                placeholder="Montevideo"
+                value={form.city}
+                onChange={handleInputChange}
+                className={errors.city ? errorRing : inputRing}
+              />
+
+              <Input
+                label={<Label text="Departamento" required />}
+                name="state"
+                placeholder="Montevideo"
+                value={form.state}
+                onChange={handleInputChange}
+                className={errors.state ? errorRing : inputRing}
+              />
+
+              <Input
+                label={<Label text="Teléfono" required />}
+                name="phone"
+                placeholder="09X XXX XXX"
+                value={form.phone}
+                onChange={handleInputChange}
+                className={errors.phone ? errorRing : inputRing}
+              />
+
+              <Button variant="default" size="sm" onClick={handleSaveAddress}>
+                Guardar dirección
               </Button>
             </div>
           )}
-
-          {showAddressForm && (
-            <div className="space-y-4 p-4 bg-background rounded-lg border border-border">
-              <h5 className="font-medium text-text-primary">Add New Address</h5>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input
-                  label="Address Label"
-                  placeholder="Home, Work, etc."
-                />
-                <Input
-                  label="Street Address"
-                  placeholder="123 Main St"
-                />
-                <Input
-                  label="City"
-                  placeholder="New York"
-                />
-                <Input
-                  label="State"
-                  placeholder="NY"
-                />
-                <Input
-                  label="ZIP Code"
-                  placeholder="10001"
-                />
-                <Input
-                  label="Phone Number"
-                  type="tel"
-                  placeholder="(555) 123-4567"
-                />
-              </div>
-              <div className="flex space-x-3">
-                <Button variant="default" size="sm">Save Address</Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowAddressForm(false)}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          )}
         </div>
       )}
-      {selectedOption === 'pickup' && (
-        <div className="space-y-4">
-          <h4 className="font-medium text-text-primary">Pickup Location</h4>
-          <div className="p-4 bg-background rounded-lg border border-border">
-            <div className="flex items-start space-x-3">
-              <Icon name="MapPin" size={20} className="text-primary mt-1" />
-              <div>
-                <p className="font-medium text-text-primary">PizzaBurger Hub - Downtown</p>
-                <p className="text-sm text-text-secondary mt-1">123 Main Street, New York, NY 10001</p>
-                <p className="text-sm text-text-secondary">Phone: (555) 123-4567</p>
-                <div className="flex items-center space-x-4 mt-2">
-                  <span className="text-xs bg-success text-success-foreground px-2 py-1 rounded">Open until 11:00 PM</span>
-                  <Button variant="ghost" size="xs" iconName="Navigation">
-                    Get Directions
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      <div className="mt-6">
-        <Select
-          label="Preferred Time"
-          options={timeSlots}
-          value="asap"
-          onChange={() => {}}
-          placeholder="Select delivery time"
-        />
-      </div>
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Header from '../../components/ui/Header';
 import Button from '../../components/ui/Button';
 import Icon from '../../components/AppIcon';
@@ -15,224 +15,200 @@ const CartPage = () => {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('card');
   const [deliveryAddress, setDeliveryAddress] = useState(null);
 
-  // Mock data for current cart
-  const { items: cartItems, total: cartTotal } = useCart();
+  const {
+    items: cartItems,
+    subtotal,
+    total,
+    orders,
+    setOrders,
+    placeOrder,
+    getLastFiveOrders,
+    addToCart
+  } = useCart();
 
-  // Mock data for saved cards
-  const [savedCards] = useState([
-    {
-      id: 1,
-      last4: "4242",
-      brand: "Visa",
-      expiry: "12/25"
-    },
-    {
-      id: 2,
-      last4: "5555",
-      brand: "Mastercard",
-      expiry: "08/26"
-    }
-  ]);
-
-  // Mock data for active orders
-  const [activeOrders] = useState([
-    {
-      id: "ORD-2025-001",
-      status: "out-for-delivery",
-      deliveryType: "delivery",
-      createdAt: "2025-01-07T11:00:00Z",
-      confirmedAt: "2025-01-07T11:02:00Z",
-      preparingAt: "2025-01-07T11:15:00Z",
-      readyAt: "2025-01-07T11:45:00Z",
-      estimatedTime: 35,
-      driver: {
-        name: "Mike Johnson",
-        vehicle: "Honda Civic - ABC 123",
-        rating: 4.8
-      },
-      items: cartItems,
-      total: 34.97
-    }
-  ]);
-
-  // Mock data for favorite orders
-  const [favoriteOrders] = useState([
-    {
-      id: 1,
-      name: "Margherita Pizza (Large)",
-      description: "Extra cheese, Gluten-free base",
-      price: 18.99,
-      lastOrdered: "2025-01-05T19:30:00Z",
-      image: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=400"
-    },
-    {
-      id: 2,
-      name: "BBQ Chicken Pizza (Medium)",
-      description: "Extra BBQ sauce, Red onions",
-      price: 16.99,
-      lastOrdered: "2025-01-03T20:15:00Z",
-      image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400"
-    },
-    {
-      id: 3,
-      name: "Bacon Cheeseburger",
-      description: "Double patty, Extra bacon",
-      price: 14.99,
-      lastOrdered: "2025-01-02T18:45:00Z",
-      image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400"
-    }
-  ]);
-
-  // Mock data for recent orders
-  const [recentOrders] = useState([
-    ...favoriteOrders,
-    {
-      id: 4,
-      name: "Veggie Supreme Pizza",
-      description: "Bell peppers, Mushrooms, Olives",
-      price: 17.99,
-      lastOrdered: "2024-12-30T17:20:00Z",
-      image: "https://images.unsplash.com/photo-1571407970349-bc81e7e96d47?w=400"
-    },
-    {
-      id: 5,
-      name: "Chicken Deluxe Burger",
-      description: "Grilled chicken, Avocado",
-      price: 13.99,
-      lastOrdered: "2024-12-28T19:10:00Z",
-      image: "https://images.unsplash.com/photo-1606755962773-d324e9a13086?w=400"
-    }
-  ]);
-
-  // Set default delivery address
+  // --- DIRECCIÓN GUARDADA ---
   useEffect(() => {
-    setDeliveryAddress({
-      label: "Home",
-      address: "123 Main Street",
-      city: "New York",
-      state: "NY",
-      zip: "10001"
-    });
+    const storedAddress = localStorage.getItem('deliveryAddress');
+    if (storedAddress) {
+      setDeliveryAddress(JSON.parse(storedAddress));
+    } else {
+      setDeliveryAddress({
+        label: "Casa",
+        address: "Av. Principal 123",
+        city: "Montevideo",
+        state: "UY",
+        zip: "11000",
+      });
+    }
   }, []);
 
+  const handleAddressChange = (newAddress) => {
+    setDeliveryAddress(newAddress);
+    localStorage.setItem('deliveryAddress', JSON.stringify(newAddress));
+  };
+
+  // --- TARJETAS GUARDADAS ---
+  const [savedCards, setSavedCards] = useState(() => {
+    try {
+      const raw = localStorage.getItem('savedCards');
+      return raw
+        ? JSON.parse(raw)
+        : [
+            { id: 1, last4: "4242", brand: "Visa", expiry: "12/25" },
+            { id: 2, last4: "5555", brand: "Mastercard", expiry: "08/26" },
+          ];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem('savedCards', JSON.stringify(savedCards));
+  }, [savedCards]);
+
+  const handleAddCard = () => {
+    const last4 = prompt("Ingresá los últimos 4 dígitos de la tarjeta:");
+    const brand = prompt("Marca (Visa, Mastercard, etc.):");
+    const expiry = prompt("Vencimiento (MM/AA):");
+
+    if (last4 && brand && expiry) {
+      const newCard = {
+        id: Date.now(),
+        last4,
+        brand,
+        expiry,
+      };
+      setSavedCards((prev) => [...prev, newCard]);
+      setSelectedPaymentMethod('card');
+      alert(`Tarjeta ${brand} **** ${last4} agregada correctamente ✅`);
+    }
+  };
+
+  const handleSelectCard = (cardId) => {
+    setSelectedPaymentMethod('card');
+    setSavedCards((prev) =>
+      prev.map((c) => ({ ...c, selected: c.id === cardId }))
+    );
+  };
+
+  // --- CALCULAR TOTALES ---
   const calculateOrderTotals = () => {
-    const subtotal = cartItems?.reduce((sum, item) => sum + (item.product?.price || 0) * (item.quantity || 1), 0);
     const deliveryFee = selectedDeliveryOption === 'delivery' ? 2.99 : 0;
     const tax = subtotal * 0.08;
-    const total = subtotal + deliveryFee + tax;
-
-    return { subtotal, deliveryFee, tax, total };
+    const totalOrder = subtotal + deliveryFee + tax;
+    return { deliveryFee, tax, total: totalOrder };
   };
 
-  const handleModifyItem = (itemId) => {
-    console.log('Modify item:', itemId);
-  };
+  const { deliveryFee, tax, total: totalOrder } = calculateOrderTotals();
 
-  const handleRemoveItem = (itemId) => {
-    console.log('Remove item:', itemId);
-  };
-
+  // --- HANDLERS DE PEDIDOS ---
   const handlePlaceOrder = () => {
-    console.log('Placing order...');
-  };
-
-  const handleReorder = (order) => {
-    console.log('Reordering:', order);
-  };
-
-  const handleModifyAndReorder = (order) => {
-    console.log('Modify and reorder:', order);
+    const newOrder = placeOrder(selectedDeliveryOption);
+    if (newOrder) setActiveTab('tracking');
   };
 
   const handleCancelOrder = (orderId) => {
-    console.log('Cancel order:', orderId);
+    setOrders((prev) => prev.filter((o) => o.id !== orderId));
   };
 
   const handleContactDriver = (driver) => {
-    console.log('Contact driver:', driver);
+    alert(`Llamando al repartidor ${driver.name} (${driver.vehicle}) 🚗`);
   };
 
-  const tabs = [
-    { id: 'new-order', label: 'New Order', icon: 'ShoppingCart' },
-    { id: 'tracking', label: 'Order Tracking', icon: 'MapPin' },
-    { id: 'reorder', label: 'Quick Reorder', icon: 'RotateCcw' }
-  ];
+  const handleReorder = (order) => {
+    order.items.forEach((i) =>
+      addToCart(i.product, { size: i.size, ingredients: i.ingredients }, i.qty)
+    );
+    setActiveTab('new-order');
+  };
 
-  const { subtotal, deliveryFee, tax, total } = calculateOrderTotals();
+  const handleModifyAndReorder = (order) => {
+    console.log('Modificar antes de volver a pedir:', order);
+  };
+
+  // --- ÚLTIMOS 5 PEDIDOS ---
+  const recentOrders = useMemo(() => getLastFiveOrders(), [orders]);
+
+  const tabs = [
+    { id: 'new-order', label: 'Nuevo Pedido', icon: 'ShoppingCart' },
+    { id: 'tracking', label: 'Seguimiento', icon: 'MapPin' },
+    { id: 'reorder', label: 'Volver a Pedir', icon: 'RotateCcw' },
+  ];
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <main className="pt-16">
-        {/* Hero Section */}
+        {/* Hero */}
         <section className="bg-gradient-to-r from-primary/10 to-accent/10 py-12">
-          <div className="max-w-7xl mx-auto px-4 lg:px-6">
-            <div className="text-center">
-              <h1 className="text-3xl lg:text-4xl font-bold text-text-primary mb-4">
-                Mi Carrito
-              </h1>
-              <p className="text-lg text-text-secondary max-w-2xl mx-auto">
-                Completá tu pedido, rastreá la entrega y gestioná tus preferencias de comida todo en un solo lugar!
-              </p>
-            </div>
+          <div className="max-w-7xl mx-auto px-4 lg:px-6 text-center">
+            <h1 className="text-3xl lg:text-4xl font-bold text-text-primary mb-4">
+              Mi Carrito
+            </h1>
+            <p className="text-lg text-text-secondary max-w-2xl mx-auto">
+              Completá tu pedido, rastreá la entrega y gestioná tus preferencias en un solo lugar.
+            </p>
           </div>
         </section>
 
-        {/* Navigation Tabs */}
+        {/* Tabs */}
         <section className="bg-card border-b border-border sticky top-16 z-40">
           <div className="max-w-7xl mx-auto px-4 lg:px-6">
             <div className="flex space-x-1 overflow-x-auto py-4">
-              {tabs?.map((tab) => (
+              {tabs.map((tab) => (
                 <Button
-                  key={tab?.id}
-                  variant={activeTab === tab?.id ? "default" : "ghost"}
+                  key={tab.id}
+                  variant={activeTab === tab.id ? "default" : "ghost"}
                   size="sm"
-                  iconName={tab?.icon}
+                  iconName={tab.icon}
                   iconPosition="left"
-                  onClick={() => setActiveTab(tab?.id)}
+                  onClick={() => setActiveTab(tab.id)}
                   className="whitespace-nowrap"
                 >
-                  {tab?.label}
+                  {tab.label}
                 </Button>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Content Sections */}
+        {/* Content */}
         <section className="py-8">
           <div className="max-w-7xl mx-auto px-4 lg:px-6">
-            
-            {/* New Order Tab */}
+            {/* --- NUEVO PEDIDO --- */}
             {activeTab === 'new-order' && (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 space-y-6">
+                  {/* Dirección */}
                   <DeliveryOptionsCard
                     selectedOption={selectedDeliveryOption}
                     onOptionChange={setSelectedDeliveryOption}
                     deliveryAddress={deliveryAddress}
-                    onAddressChange={setDeliveryAddress}
+                    onAddressChange={handleAddressChange}
                   />
-                  
+
+                  {/* Método de pago */}
                   <PaymentMethodCard
                     selectedMethod={selectedPaymentMethod}
                     onMethodChange={setSelectedPaymentMethod}
                     savedCards={savedCards}
-                    onAddCard={() => {}}
+                    onAddCard={handleAddCard}
+                    onSelectCard={handleSelectCard}
                   />
                 </div>
-                
+
+                {/* Resumen */}
                 <div className="space-y-6">
                   <OrderSummaryCard
                     items={cartItems}
                     subtotal={subtotal}
                     deliveryFee={deliveryFee}
                     tax={tax}
-                    total={total}
-                    onModifyItem={handleModifyItem}
-                    onRemoveItem={handleRemoveItem}
+                    total={totalOrder}
+                    onModifyItem={() => {}}
+                    onRemoveItem={() => {}}
                   />
-                  
+
                   <Button
                     variant="default"
                     size="lg"
@@ -240,22 +216,22 @@ const CartPage = () => {
                     iconName="CreditCard"
                     iconPosition="left"
                     onClick={handlePlaceOrder}
-                    disabled={cartItems?.length === 0}
+                    disabled={cartItems.length === 0}
                   >
-                    Hacer pedido - ${total?.toFixed(2)}
+                    Hacer pedido - ${totalOrder.toFixed(2)}
                   </Button>
                 </div>
               </div>
             )}
 
-            {/* Order Tracking Tab */}
+            {/* --- SEGUIMIENTO --- */}
             {activeTab === 'tracking' && (
               <div className="max-w-4xl mx-auto">
-                {activeOrders?.length > 0 ? (
+                {orders.length > 0 ? (
                   <div className="space-y-6">
-                    {activeOrders?.map((order) => (
+                    {orders.map((order) => (
                       <OrderTrackingCard
-                        key={order?.id}
+                        key={order.id}
                         order={order}
                         onCancelOrder={handleCancelOrder}
                         onContactDriver={handleContactDriver}
@@ -265,25 +241,50 @@ const CartPage = () => {
                 ) : (
                   <div className="text-center py-12">
                     <Icon name="Package" size={48} className="text-text-secondary mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-text-primary mb-2">No Active Orders</h3>
-                    <p className="text-text-secondary mb-6">You don't have any orders in progress right now</p>
-                    <Button variant="default" iconName="ShoppingCart" iconPosition="left">
-                      Start New Order
+                    <h3 className="text-xl font-semibold text-text-primary mb-2">
+                      No hay pedidos activos
+                    </h3>
+                    <p className="text-text-secondary mb-6">
+                      Aún no realizaste ningún pedido.
+                    </p>
+                    <Button
+                      variant="default"
+                      iconName="ShoppingCart"
+                      iconPosition="left"
+                      onClick={() => setActiveTab('new-order')}
+                    >
+                      Nuevo Pedido
                     </Button>
                   </div>
                 )}
               </div>
             )}
 
-            {/* Quick Reorder Tab */}
+            {/* --- VOLVER A PEDIR --- */}
             {activeTab === 'reorder' && (
               <div className="max-w-4xl mx-auto">
-                <QuickReorderCard
-                  favoriteOrders={favoriteOrders}
-                  recentOrders={recentOrders}
-                  onReorder={handleReorder}
-                  onModifyAndReorder={handleModifyAndReorder}
-                />
+                {recentOrders.length > 0 ? (
+                  <QuickReorderCard
+                    favoriteOrders={[]}
+                    recentOrders={recentOrders}
+                    onReorder={handleReorder}
+                    onModifyAndReorder={handleModifyAndReorder}
+                  />
+                ) : (
+                  <div className="text-center py-12">
+                    <Icon
+                      name="History"
+                      size={48}
+                      className="text-text-secondary mx-auto mb-4"
+                    />
+                    <h3 className="text-xl font-semibold text-text-primary mb-2">
+                      Sin pedidos recientes
+                    </h3>
+                    <p className="text-text-secondary mb-6">
+                      Aún no tenés pedidos para volver a pedir.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>
