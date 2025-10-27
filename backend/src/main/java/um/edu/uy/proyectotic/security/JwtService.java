@@ -8,8 +8,8 @@ import java.util.Date;
 
 @Service
 public class JwtService {
-    private static final String SECRET_KEY = "4_'l0%4.!J+L_N0}qvk98_+!jTy£D0NKwsFHv9B*+$q@Lim8a"; // cambiala por una larga
-    private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 24; // 24 horas
+    private static final String SECRET_KEY = "4_'l0%4.!J+L_N0}qvk98_+!jTy£D0NKwsFHv9B*+$q@Lim8a";
+    private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 24;
 
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());

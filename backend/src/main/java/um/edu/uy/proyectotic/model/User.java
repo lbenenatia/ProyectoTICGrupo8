@@ -25,9 +25,6 @@ public class User {
     private Boolean isActive;
 
     @Column(nullable = false)
-    private Boolean isEmailVerified;
-
-    @Column(nullable = false)
     private LocalDate birthDate;
 
     @Column(nullable = false)
@@ -76,14 +73,6 @@ public class User {
 
     public void setIsActive(Boolean isActive) {
         this.isActive = isActive;
-    }
-
-    public Boolean getIsEmailVerified() {
-        return isEmailVerified;
-    }
-
-    public void setIsEmailVerified(Boolean isEmailVerified) {
-        this.isEmailVerified = isEmailVerified;
     }
 
     public LocalDate getBirthDate() {
