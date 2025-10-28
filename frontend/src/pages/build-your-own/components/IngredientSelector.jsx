@@ -12,59 +12,83 @@ const IngredientSelector = ({
 
   const pizzaIngredients = {
     base: [
-      { id: 'thin-crust', name: 'Thin Crust', price: 0, dietary: ['vegetarian'], allergens: ['gluten'] },
-      { id: 'thick-crust', name: 'Thick Crust', price: 1.50, dietary: ['vegetarian'], allergens: ['gluten'] },
-      { id: 'gluten-free', name: 'Gluten-Free Base', price: 3.00, dietary: ['vegetarian', 'gluten-free'], allergens: [] },
-      { id: 'cauliflower', name: 'Cauliflower Crust', price: 4.00, dietary: ['vegetarian', 'gluten-free', 'keto'], allergens: [] }
+      { id: 'thin-crust', name: 'Integral', price: 0, dietary: [], allergens: ['gluten'] },
+      { id: 'thick-crust', name: 'Napolitana', price: 1.50, dietary: [], allergens: ['gluten'] },
+      { id: 'gluten-free', name: 'Sin gluten', price: 3.00, dietary: ['Libre de gluten'], allergens: [] }
     ],
-    sauce: [
-      { id: 'tomato', name: 'Classic Tomato', price: 0, dietary: ['vegetarian', 'vegan'], allergens: [] },
-      { id: 'white', name: 'White Sauce', price: 1.00, dietary: ['vegetarian'], allergens: ['dairy'] },
-      { id: 'pesto', name: 'Basil Pesto', price: 1.50, dietary: ['vegetarian'], allergens: ['nuts', 'dairy'] },
-      { id: 'bbq', name: 'BBQ Sauce', price: 1.00, dietary: ['vegetarian'], allergens: [] }
+    salsa: [
+      { id: 'tomato', name: 'Salsa de tomate', price: 0, dietary: [], allergens: [] },
+      { id: 'pomodoro', name: 'Salsa pomodoro', price: 1.00, dietary: [], allergens: [] },
     ],
-    cheese: [
-      { id: 'mozzarella', name: 'Mozzarella', price: 0, dietary: ['vegetarian'], allergens: ['dairy'] },
-      { id: 'cheddar', name: 'Cheddar', price: 1.00, dietary: ['vegetarian'], allergens: ['dairy'] },
-      { id: 'vegan-cheese', name: 'Vegan Cheese', price: 2.50, dietary: ['vegan'], allergens: [] },
-      { id: 'goat-cheese', name: 'Goat Cheese', price: 2.00, dietary: ['vegetarian'], allergens: ['dairy'] }
+    queso: [
+      { id: 'mozzarella', name: 'Muzzarella', price: 0, dietary: [], allergens: [] },
+      { id: '4-cheese', name: '4 Quesos', price: 2.50, dietary: [], allergens: [] },
+      { id: 'roquefort', name: 'Roquefort', price: 2.00, dietary: [], allergens: [] }
     ],
     toppings: [
       { id: 'pepperoni', name: 'Pepperoni', price: 2.00, dietary: [], allergens: [] },
-      { id: 'mushrooms', name: 'Mushrooms', price: 1.50, dietary: ['vegetarian', 'vegan'], allergens: [] },
-      { id: 'bell-peppers', name: 'Bell Peppers', price: 1.50, dietary: ['vegetarian', 'vegan'], allergens: [] },
-      { id: 'olives', name: 'Black Olives', price: 1.50, dietary: ['vegetarian', 'vegan'], allergens: [] },
-      { id: 'chicken', name: 'Grilled Chicken', price: 3.00, dietary: [], allergens: [] },
-      { id: 'bacon', name: 'Bacon', price: 2.50, dietary: [], allergens: [] }
+      { id: 'sausage', name: 'Salchicha', price: 2.00, dietary: [], allergens: [] },
+      { id: 'tuna', name: 'Atún', price: 2.00, dietary: [], allergens: [] },
+      { id: 'mushroom', name: 'Champiñon', price: 1.50, dietary: [], allergens: [] },
+      { id: 'egg', name: 'Huevo', price: 1.00, dietary: [], allergens: [] },
+      { id: 'oregano', name: 'Orégano', price: 0.50, dietary: [], allergens: [] },
+      { id: 'pepper', name: 'Morrón', price: 1.50, dietary: [], allergens: [] },
+      { id: 'tomato', name: 'Tomate', price: 1.50, dietary: [], allergens: [] },
+      { id: 'olive', name: 'Aceituna', price: 1.50, dietary: [], allergens: [] },
+      { id: 'cucumber', name: 'Pepino', price: 1.50, dietary: [], allergens: [] },
+      { id: 'basil', name: 'Albahaca', price: 1.50, dietary: [], allergens: [] },
+      { id: 'onion', name: 'Cebolla', price: 1.50, dietary: [], allergens: [] },
+      { id: 'ham', name: 'Jamón', price: 1.50, dietary: [], allergens: [] },
+      { id: 'chicken', name: 'Pollo', price: 3.00, dietary: [], allergens: [] },
+      { id: 'anchovy', name: 'Anchoa', price: 1.50, dietary: [], allergens: [] },
+      { id: 'bacon', name: 'Panceta', price: 2.50, dietary: [], allergens: [] }
     ]
   };
 
   const burgerIngredients = {
     base: [
-      { id: 'brioche', name: 'Brioche Bun', price: 0, dietary: ['vegetarian'], allergens: ['gluten', 'eggs'] },
-      { id: 'whole-wheat', name: 'Whole Wheat Bun', price: 1.00, dietary: ['vegetarian'], allergens: ['gluten'] },
-      { id: 'gluten-free-bun', name: 'Gluten-Free Bun', price: 2.50, dietary: ['vegetarian', 'gluten-free'], allergens: [] },
-      { id: 'lettuce-wrap', name: 'Lettuce Wrap', price: 1.50, dietary: ['vegetarian', 'vegan', 'keto'], allergens: [] }
+      { id: 'potato', name: 'Brioche Bun', price: 0, dietary: [], allergens: ['gluten'] },
+      { id: 'whole-wheat', name: 'Pan integral', price: 1.00, dietary: [], allergens: ['gluten'] },
+      { id: 'gluten-free-bun', name: 'Pan sin gluten', price: 2.50, dietary: ['Libre de gluten'], allergens: [] }
     ],
-    patty: [
-      { id: 'beef', name: 'Beef Patty', price: 0, dietary: [], allergens: [] },
-      { id: 'turkey', name: 'Turkey Patty', price: 1.50, dietary: [], allergens: [] },
-      { id: 'plant-based', name: 'Plant-Based Patty', price: 3.00, dietary: ['vegetarian', 'vegan'], allergens: [] },
-      { id: 'black-bean', name: 'Black Bean Patty', price: 2.50, dietary: ['vegetarian', 'vegan'], allergens: [] }
+    carne: [
+      { id: 'beef', name: 'Carne de res', price: 0, dietary: [], allergens: [] },
+      { id: 'chicken', name: 'Pollo', price: 1.50, dietary: [], allergens: [] },
+      { id: 'pork', name: 'Cerdo', price: 2.00, dietary: [], allergens: [] },
+      { id: 'lentils', name: 'Lentejas', price: 2.00, dietary: [], allergens: [] },
+      { id: 'soy', name: 'Soja', price: 2.00, dietary: [], allergens: [] },
+      { id: 'salmon', name: 'Salmón', price: 2.50, dietary: [], allergens: [] }
     ],
-    cheese: [
-      { id: 'american', name: 'American Cheese', price: 0.50, dietary: ['vegetarian'], allergens: ['dairy'] },
-      { id: 'swiss', name: 'Swiss Cheese', price: 1.00, dietary: ['vegetarian'], allergens: ['dairy'] },
-      { id: 'vegan-cheese-slice', name: 'Vegan Cheese', price: 1.50, dietary: ['vegan'], allergens: [] },
-      { id: 'blue-cheese', name: 'Blue Cheese', price: 1.50, dietary: ['vegetarian'], allergens: ['dairy'] }
+    queso: [
+      { id: 'american', name: 'Americano', price: 0.50, dietary: [], allergens: [] },
+      { id: 'cheddar', name: 'Cheddar', price: 1.00, dietary: [], allergens: [] },
+      { id: 'swiss', name: 'Suizo', price: 1.00, dietary: [], allergens: [] },
+      { id: 'blue-cheese', name: 'Queso azul', price: 1.50, dietary: [], allergens: [] }
     ],
     toppings: [
-      { id: 'lettuce', name: 'Lettuce', price: 0.50, dietary: ['vegetarian', 'vegan'], allergens: [] },
-      { id: 'tomato', name: 'Tomato', price: 0.50, dietary: ['vegetarian', 'vegan'], allergens: [] },
-      { id: 'onion', name: 'Red Onion', price: 0.50, dietary: ['vegetarian', 'vegan'], allergens: [] },
-      { id: 'pickles', name: 'Pickles', price: 0.50, dietary: ['vegetarian', 'vegan'], allergens: [] },
+      { id: 'lettuce', name: 'Lechuga', price: 0.50, dietary: [], allergens: [] },
+      { id: 'tomato', name: 'Tomate', price: 0.50, dietary: [], allergens: [] },
+      { id: 'onion', name: 'Cebolla', price: 0.50, dietary: [], allergens: [] },
+      { id: 'pickles', name: 'Pepinillos', price: 0.50, dietary: [], allergens: [] },
       { id: 'bacon-burger', name: 'Bacon', price: 2.00, dietary: [], allergens: [] },
-      { id: 'avocado', name: 'Avocado', price: 2.50, dietary: ['vegetarian', 'vegan'], allergens: [] }
+      { id: 'jalapenos', name: 'Jalapeños', price: 1.00, dietary: [], allergens: [] },
+      { id: 'mushrooms', name: 'Champiñones', price: 1.50, dietary: [], allergens: [] },
+      { id: 'fried-egg', name: 'Huevo frito', price: 1.50, dietary: [], allergens: [] },
+      { id: 'peppers', name: 'Morrones', price: 1.50, dietary: [], allergens: [] },
+      { id: 'ham', name: 'Jamón', price: 1.50, dietary: [], allergens: [] },
+      { id: 'avocado', name: 'Aguacate', price: 2.50, dietary: [], allergens: [] }
+
+    ],
+    aderezos: [
+      { id: 'ketchup', name: 'Kétchup', price: 0.25, dietary: [], allergens: [] },
+      { id: 'mustard', name: 'Mostaza', price: 0.25, dietary: [], allergens: [] },
+      { id: 'mayo', name: 'Mayonesa', price: 0.25, dietary: [], allergens: [] },
+      { id: 'bbq-sauce', name: 'Salsa BBQ', price: 0.50, dietary: [], allergens: [] },
+      { id: 'aioli', name: 'Alioli', price: 0.50, dietary: [], allergens: [] },
+      { id: 'ranch-dressing', name: 'Aderezo ranch', price: 0.50, dietary: [], allergens: [] },
+      { id: 'special-sauce', name: 'Salsa especial', price: 1.00, dietary: [], allergens: [] },
+      { id: 'hot-sauce', name: 'Salsa picante', price: 0.50, dietary: [], allergens: [] },
+      { id: 'creole', name: 'Criolla', price: 0.50, dietary: [], allergens: [] }
     ]
   };
 
@@ -86,7 +110,7 @@ const IngredientSelector = ({
     const isSelected = currentCategory?.includes(ingredientId);
     
     let newSelection;
-    if (categoryId === 'base' || categoryId === 'patty') {
+    if (categoryId === 'base' || categoryId === 'carne') {
       // Single selection for base/patty
       newSelection = isSelected ? [] : [ingredientId];
     } else {
@@ -102,10 +126,10 @@ const IngredientSelector = ({
   const getCategoryIcon = (category) => {
     const icons = {
       base: 'Circle',
-      sauce: 'Droplets',
-      cheese: 'Milk',
+      salsa: 'Droplets',
+      queso: 'Milk',
       toppings: 'Plus',
-      patty: 'Beef',
+      carne: 'Beef',
     };
     return icons?.[category] || 'Circle';
   };
@@ -113,7 +137,7 @@ const IngredientSelector = ({
   return (
     <div className="bg-card rounded-lg p-6 shadow-warm">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-text-primary">Build Your Creation</h2>
+        <h2 className="text-xl font-semibold text-text-primary">Armá tu creación</h2>
         <Icon name="ChefHat" size={20} className="text-text-secondary" />
       </div>
       {/* Category Tabs */}
@@ -137,7 +161,7 @@ const IngredientSelector = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filterIngredients(ingredients?.[activeCategory])?.map((ingredient) => {
           const isSelected = selectedIngredients?.[activeCategory]?.includes(ingredient?.id) || false;
-          const isSingleSelect = activeCategory === 'base' || activeCategory === 'patty';
+          const isSingleSelect = activeCategory === 'base' || activeCategory === 'carne';
           
           return (
             <div
@@ -158,7 +182,7 @@ const IngredientSelector = ({
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-primary">
-                  {ingredient?.price === 0 ? 'Free' : `+$${ingredient?.price?.toFixed(2)}`}
+                  {ingredient?.price === 0 ? 'Gratis' : `+$${ingredient?.price?.toFixed(2)}`}
                 </span>
                 {ingredient?.dietary?.length > 0 && (
                   <div className="flex flex-wrap gap-1">
@@ -176,7 +200,7 @@ const IngredientSelector = ({
               {ingredient?.allergens?.length > 0 && (
                 <div className="mt-2">
                   <p className="text-xs text-warning">
-                    Contains: {ingredient?.allergens?.join(', ')}
+                    Contiene: {ingredient?.allergens?.join(', ')}
                   </p>
                 </div>
               )}
@@ -184,15 +208,6 @@ const IngredientSelector = ({
           );
         })}
       </div>
-      {filterIngredients(ingredients?.[activeCategory])?.length === 0 && (
-        <div className="text-center py-8">
-          <Icon name="Filter" size={48} className="text-text-secondary mx-auto mb-4" />
-          <p className="text-text-secondary">No ingredients match your dietary filters</p>
-          <Button variant="outline" size="sm" className="mt-2">
-            Clear Filters
-          </Button>
-        </div>
-      )}
     </div>
   );
 };

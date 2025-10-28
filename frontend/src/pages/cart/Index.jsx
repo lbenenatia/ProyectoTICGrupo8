@@ -142,7 +142,7 @@ const CartPage = () => {
         {/* Hero */}
         <section className="bg-gradient-to-r from-primary/10 to-accent/10 py-12">
           <div className="max-w-7xl mx-auto px-4 lg:px-6 text-center">
-            <h1 className="text-3xl lg:text-4xl font-bold text-text-primary mb-4">
+            <h1 className="text-4xl lg:text-5xl font-playfair font-semibold text-text-primary mb-4">
               Mi Carrito
             </h1>
             <p className="text-lg text-text-secondary max-w-2xl mx-auto">

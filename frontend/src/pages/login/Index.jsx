@@ -12,7 +12,6 @@ export default function LoginPage() {
   const location = useLocation();
   const { login, loading } = useAuth();
 
-  // Si el usuario intentó acceder a una página protegida, redirige ahí después del login
   const from = location.state?.from?.pathname || "/homepage";
 
   async function handleSubmit(e) {
@@ -20,7 +19,6 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      // 🔥 Usa la función login del AuthContext (no hagas fetch directo)
       const userData = await login({ email, password });
 
       console.log("Usuario autenticado:", userData);

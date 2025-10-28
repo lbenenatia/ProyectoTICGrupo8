@@ -3,8 +3,6 @@ import { BrowserRouter, Routes as RouterRoutes, Route } from "react-router-dom";
 import ScrollToTop from "components/ScrollToTop";
 import ErrorBoundary from "components/ErrorBoundary";
 import NotFound from "pages/NotFound";
-import BurgerMenu from './pages/burger-menu/Index';
-import PizzaMenu from './pages/pizza-menu/Index';
 import AccountDashboard from './pages/account-dashboard/Index';
 import BuildYourOwn from './pages/build-your-own/Index';
 import CartPage from './pages/cart/Index';
@@ -15,6 +13,9 @@ import LoginPage from './pages/login/Index';
 import ForgotRequest from './pages/forgot-password/Request';
 import ForgotReset from './pages/forgot-password/Reset';
 import { AuthProvider } from "context/AuthContext";
+import AdminRoute from "./components/AdminRoute";
+import AdminPage from "./pages/admin/Index";
+import Unauthorized from './pages/unauthorized/Index';
 
 const Routes = () => {
   return (
@@ -24,8 +25,6 @@ const Routes = () => {
           <ScrollToTop />
           <RouterRoutes>
             <Route path="/" element={<Homepage />} />
-            <Route path="/burger-menu" element={<BurgerMenu />} />
-            <Route path="/pizza-menu" element={<PizzaMenu />} />
             <Route path="/account-dashboard" element={<AccountDashboard />} />
             <Route path="/build-your-own" element={<BuildYourOwn />} />
             <Route path="/cart" element={<RequireAuth><CartPage /></RequireAuth>} />
@@ -34,6 +33,8 @@ const Routes = () => {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/forgot-password" element={<ForgotRequest />} />
             <Route path="/forgot-password/reset" element={<ForgotReset />} />
+            <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
+            <Route path="/unauthorized" element={<Unauthorized />} />
             <Route path="*" element={<NotFound />} />
           </RouterRoutes>
         </ErrorBoundary>

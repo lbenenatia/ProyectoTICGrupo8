@@ -7,17 +7,16 @@ const OrderSummary = ({
   selectedSize, 
   selectedIngredients, 
   totalPrice, 
-  nutritionalInfo,
   onAddToCart,
   onSaveRecipe 
 }) => {
+
   const getIngredientDetails = () => {
     const pizzaIngredients = {
       base: [
-        { id: 'thin-crust', name: 'Thin Crust', price: 0 },
-        { id: 'thick-crust', name: 'Thick Crust', price: 1.50 },
-        { id: 'gluten-free', name: 'Gluten-Free Base', price: 3.00 },
-        { id: 'cauliflower', name: 'Cauliflower Crust', price: 4.00 }
+        { id: 'thin-crust', name: 'Masa fina', price: 0 },
+        { id: 'thick-crust', name: 'Masa gruesa', price: 1.50 },
+        { id: 'gluten-free', name: 'Base sin gluten', price: 3.00 }
       ],
       sauce: [
         { id: 'tomato', name: 'Classic Tomato', price: 0 },
@@ -91,19 +90,18 @@ const OrderSummary = ({
   const getSizeInfo = () => {
     if (productType === 'pizza') {
       const sizeMap = {
-        small: { name: 'Small (10")', multiplier: 1 },
-        medium: { name: 'Medium (12")', multiplier: 1.4 },
-        large: { name: 'Large (14")', multiplier: 1.8 },
-        xlarge: { name: 'X-Large (16")', multiplier: 2.2 }
+        small: { nameEs: 'Pequeña' },
+        medium: { nameEs: 'Mediana' },
+        large: { nameEs: 'Grande' }
       };
-      return sizeMap?.[selectedSize] || sizeMap?.medium;
+      return sizeMap?.[selectedSize] || null;
     } else {
       const sizeMap = {
-        single: { name: 'Single (1/4 lb)', multiplier: 1 },
-        double: { name: 'Double (1/2 lb)', multiplier: 1.6 },
-        triple: { name: 'Triple (3/4 lb)', multiplier: 2.2 }
+        single: { nameEs: 'Simple' },
+        double: { nameEs: 'Doble' },
+        triple: { nameEs: 'Triple' }
       };
-      return sizeMap?.[selectedSize] || sizeMap?.single;
+      return sizeMap?.[selectedSize] || null;
     }
   };
 
@@ -112,9 +110,10 @@ const OrderSummary = ({
   return (
     <div className="bg-card rounded-lg p-6 shadow-warm sticky top-24">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold text-text-primary">Order Summary</h2>
+        <h2 className="text-xl font-semibold text-text-primary">Resumen del Pedido</h2>
         <Icon name="Receipt" size={20} className="text-text-secondary" />
       </div>
+
       {/* Product Preview */}
       <div className="mb-6">
         <div className="flex items-center space-x-3 mb-3">
@@ -122,63 +121,40 @@ const OrderSummary = ({
             <Icon name={productType === 'pizza' ? 'Pizza' : 'Beef'} size={24} className="text-primary-foreground" />
           </div>
           <div>
-            <h3 className="font-semibold text-text-primary capitalize">Custom {productType}</h3>
-            <p className="text-sm text-text-secondary">{sizeInfo?.name}</p>
+            <h3 className="font-semibold text-text-primary capitalize">{productType}</h3>
+            {selectedSize && selectedSize !== 'null' ? (
+              <p className="text-sm text-text-secondary">{sizeInfo?.nameEs}</p>
+            ) : (
+              <p className="text-sm text-text-secondary italic">Sin tamaño seleccionado</p>
+            )}
           </div>
         </div>
       </div>
+
       {/* Selected Ingredients */}
       <div className="mb-6">
-        <h4 className="font-medium text-text-primary mb-3">Ingredients</h4>
+        <h4 className="font-medium text-text-primary mb-3">Ingredientes</h4>
         <div className="space-y-2 max-h-48 overflow-y-auto">
           {selectedItems?.length > 0 ? (
             selectedItems?.map((item, index) => (
               <div key={index} className="flex justify-between items-center text-sm">
                 <span className="text-text-secondary">{item?.name}</span>
                 <span className="text-text-primary font-medium">
-                  {item?.price === 0 ? 'Free' : `+$${item?.price?.toFixed(2)}`}
+                  {item?.price === 0 ? 'Gratis' : `+$${item?.price?.toFixed(2)}`}
                 </span>
               </div>
             ))
           ) : (
-            <p className="text-sm text-text-secondary italic">No ingredients selected</p>
+            <p className="text-sm text-text-secondary italic">Sin ingredientes seleccionados</p>
           )}
         </div>
       </div>
-      {/* Nutritional Info */}
-      <div className="mb-6 p-4 bg-muted rounded-lg">
-        <h4 className="font-medium text-text-primary mb-3 flex items-center">
-          <Icon name="Activity" size={16} className="mr-2" />
-          Nutrition Facts
-        </h4>
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <span className="text-text-secondary">Calories</span>
-            <p className="font-semibold text-text-primary">{nutritionalInfo?.calories}</p>
-          </div>
-          <div>
-            <span className="text-text-secondary">Protein</span>
-            <p className="font-semibold text-text-primary">{nutritionalInfo?.protein}g</p>
-          </div>
-          <div>
-            <span className="text-text-secondary">Carbs</span>
-            <p className="font-semibold text-text-primary">{nutritionalInfo?.carbs}g</p>
-          </div>
-          <div>
-            <span className="text-text-secondary">Fat</span>
-            <p className="font-semibold text-text-primary">{nutritionalInfo?.fat}g</p>
-          </div>
-        </div>
-      </div>
+
       {/* Price Breakdown */}
       <div className="mb-6 p-4 border border-border rounded-lg">
         <div className="flex justify-between items-center mb-2">
-          <span className="text-text-secondary">Base Price</span>
+          <span className="text-text-secondary">Precio base</span>
           <span className="text-text-primary">${(productType === 'pizza' ? 12.99 : 9.99)?.toFixed(2)}</span>
-        </div>
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-text-secondary">Size Multiplier</span>
-          <span className="text-text-primary">×{sizeInfo?.multiplier}</span>
         </div>
         <div className="flex justify-between items-center mb-2">
           <span className="text-text-secondary">Extras</span>
@@ -193,6 +169,7 @@ const OrderSummary = ({
           </div>
         </div>
       </div>
+
       {/* Action Buttons */}
       <div className="space-y-3">
         <Button 
@@ -203,7 +180,7 @@ const OrderSummary = ({
           onClick={onAddToCart}
           disabled={selectedItems?.length === 0}
         >
-          Add to Cart
+          Agregar al Carrito
         </Button>
         
         <Button 
@@ -214,17 +191,7 @@ const OrderSummary = ({
           onClick={onSaveRecipe}
           disabled={selectedItems?.length === 0}
         >
-          Save Recipe
-        </Button>
-        
-        <Button 
-          variant="ghost" 
-          fullWidth 
-          iconName="Share2" 
-          iconPosition="left"
-          disabled={selectedItems?.length === 0}
-        >
-          Share Creation
+          Favoritos
         </Button>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import Icon from '../AppIcon';
 import Button from './Button';
@@ -9,11 +9,17 @@ import { useCart } from 'context/CartContext';
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const { user, logout, loading } = useAuth();
 
-  const navigationItems = [
+  const baseNavigation = [
     { name: 'Inicio', path: '/homepage', icon: 'Home' },
     { name: 'Creá tu pedido', path: '/build-your-own', icon: 'ChefHat' },
   ];
+  const adminItem = { name: 'Panel Admin', path: '/admin', icon: 'ShieldUser' };
+  const navigationItems = useMemo(
+    () => (user?.role === 'ADMIN' ? [...baseNavigation, adminItem] : baseNavigation),
+    [user]
+  );
 
   const secondaryItems = [
     { name: 'Mi Cuenta', path: '/account-dashboard', icon: 'User' },
@@ -25,7 +31,6 @@ const Header = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
-  const { user, logout, loading } = useAuth();
   const navigate = useNavigate();
 
   const { items } = useCart();
