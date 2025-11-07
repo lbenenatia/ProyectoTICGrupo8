@@ -4,8 +4,6 @@ import AdminOverview from "./components/AdminOverview";
 import ManageProducts from "./components/ManageProducts";
 import ManageOrders from "./components/ManageOrders";
 import { ShieldCheck, Package, ClipboardList } from "lucide-react";
-import Icon from '../../components/AppIcon';
-
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -13,7 +11,7 @@ export default function AdminPage() {
   const tabs = [
     { id: "overview", label: "Resumen", icon: ShieldCheck },
     { id: "products", label: "Productos", icon: Package },
-    { id: "orders", label: "Pedidos", icon: ClipboardList }
+    { id: "orders", label: "Pedidos", icon: ClipboardList },
   ];
 
   const renderContent = () => {
@@ -28,36 +26,56 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+    <div className="min-h-screen bg-background">
       <Header />
-      <div className="mt-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <h1 className="text-3xl font-semibold mb-8 text-gray-800 dark:text-gray-100">
-          Panel de administración
-        </h1>
+      <main className="pt-20 pb-12">
+        <div className="max-w-7xl mx-auto px-4 lg:px-6">
+          {/* Encabezado */}
+          <div className="text-center mb-8">
+            <h1 className="mt-8 text-3xl font-semibold mb-8 text-gray-800 dark:text-gray-100">
+              Panel de Administración
+            </h1>
+            <p className="text-lg text-text-secondary max-w-2xl mx-auto">
+              Gestioná productos, pedidos y visualizá estadísticas de la tienda.
+            </p>
+          </div>
 
-        {/* Tabs de navegación */}
-        <div className="flex flex-wrap gap-4 mb-10">
-          {tabs.map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              onClick={() => setActiveTab(id)}
-              className={`flex items-center gap-2 px-5 py-2 rounded-lg transition-all ${
-                activeTab === id
-                  ? "bg-orange-500 text-white shadow-md"
-                  : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-              }`}
-            >
-              <Icon size={18} />
-              {label}
-            </button>
-          ))}
-        </div>
+          {/* Layout principal */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            {/* Columna izquierda: tabs */}
+            <div className="lg:col-span-1 space-y-6">
+              <div className="bg-card rounded-lg p-6 shadow-warm">
+                <h2 className="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-100">
+                  Secciones
+                </h2>
+                <div className="flex flex-col gap-3">
+                  {tabs.map(({ id, label, icon: Icon }) => (
+                    <button
+                      key={id}
+                      onClick={() => setActiveTab(id)}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                        activeTab === id
+                          ? "bg-orange-500 text-white shadow-md"
+                          : "border-2 border-primary bg-primary/5 hover:bg-primary/10 text-gray-700 dark:text-gray-300"
+                      }`}
+                    >
+                      <Icon size={18} />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
 
-        {/* Contenido dinámico */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-          {renderContent()}
+            {/* Columna derecha: contenido dinámico */}
+            <div className="lg:col-span-3 space-y-6">
+              <div className="bg-card rounded-lg p-6 shadow-warm">
+                {renderContent()}
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

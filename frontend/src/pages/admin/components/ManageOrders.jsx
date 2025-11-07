@@ -30,9 +30,9 @@ export default function ManageOrders() {
       <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100">
         Gestión de pedidos
       </h2>
-      <table className="w-full border-collapse">
+      <table className="w-full border-collapse rounded-lg overflow-hidden">
         <thead>
-          <tr className="bg-gray-100 dark:bg-gray-700">
+          <tr className="bg-primary/10 dark:bg-primary/20">
             <th className="p-3 text-left">ID</th>
             <th className="p-3 text-left">Usuario</th>
             <th className="p-3 text-left">Fecha</th>

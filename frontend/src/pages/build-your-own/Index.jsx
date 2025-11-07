@@ -10,7 +10,6 @@ const BuildYourOwn = () => {
   const [selectedType, setSelectedType] = useState('pizza');
   const [selectedSize, setSelectedSize] = useState('null'); 
   const [selectedIngredients, setSelectedIngredients] = useState({});
-  const [totalPrice, setTotalPrice] = useState(0);
 
   const handleTypeChange = (type) => {
     if (type === 'pizza') {
@@ -35,46 +34,9 @@ const BuildYourOwn = () => {
     }));
   };
 
-  useEffect(() => {
-    if (!selectedType || !selectedSize) {
-      setTotalPrice(0);
-      return;
-    }
-    const basePrice = selectedType === 'pizza' ? 0 : 0;
-
-    const sizeMultipliers = {
-      pizza: { small: 1, medium: 1.4, large: 1.8, xlarge: 2.2 },
-      burger: { single: 1, double: 1.6, triple: 2.2 },
-    };
-
-    const multiplier = sizeMultipliers?.[selectedType]?.[selectedSize] || 1;
-
-    const ingredientPrices = {
-      pepperoni: 2,
-      mushrooms: 1.5,
-      bacon: 2.5,
-      chicken: 3,
-      avocado: 2.5,
-      cheddar: 1.0,
-      american: 0.5,
-      tomato: 0.5,
-      fries: 3.5,
-      drink: 2.5,
-    };
-
-    let extras = 0;
-    Object.values(selectedIngredients)?.flat()?.forEach((id) => {
-      extras += ingredientPrices[id] || 0;
-    });
-
-    setTotalPrice(basePrice * multiplier + extras);
-  }, [selectedType, selectedSize, selectedIngredients]);
-
   const handleAddToCart = () => {
     alert(
-      `Agregaste una ${selectedType || 'creación'} por $${totalPrice.toFixed(
-        2
-      )}`
+      `Agregaste una ${selectedType || 'creación'} al carrito`
     );
   };
 
@@ -89,7 +51,7 @@ const BuildYourOwn = () => {
         <div className="max-w-7xl mx-auto px-4 lg:px-6">
           {/* Encabezado */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl lg:text-5xl font-playfair font-semibold text-text-primary mb-4">
+            <h1 className="mt-8 text-3xl font-semibold mb-8 text-gray-800 dark:text-gray-100">
               Creá Tu Propia Pizza o Hamburguesa
             </h1>
             <p className="text-lg text-text-secondary max-w-2xl mx-auto">
@@ -113,7 +75,7 @@ const BuildYourOwn = () => {
                 />
               )}
 
-              {selectedType && selectedSize && (
+              {selectedType && selectedSize && selectedSize !== 'null' && (
                 <IngredientSelector
                   productType={selectedType}
                   selectedIngredients={selectedIngredients}
@@ -128,7 +90,6 @@ const BuildYourOwn = () => {
                 productType={selectedType}
                 selectedSize={selectedSize}
                 selectedIngredients={selectedIngredients}
-                totalPrice={totalPrice}
                 onAddToCart={handleAddToCart}
                 onSaveRecipe={handleSaveRecipe}
               />

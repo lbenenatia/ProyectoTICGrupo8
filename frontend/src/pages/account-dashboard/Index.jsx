@@ -5,27 +5,23 @@ import Header from '../../components/ui/Header';
 import ProfileCard from './components/ProfileCard';
 import RecentOrders from './components/RecentOrders';
 import FavoriteItems from './components/FavoriteItems';
-import QuickActions from './components/QuickActions';
 import Icon from '../../components/AppIcon';
 
 const AccountDashboard = () => {
   const { user } = useAuth();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState('overview');
-  const [currentLanguage, setCurrentLanguage] = useState('en');
 
   useEffect(() => {
-    const savedLanguage = localStorage.getItem('language') || 'es';
-    setCurrentLanguage(savedLanguage);
-  }, []);
+    if (location.state?.defaultTab) {
+      setActiveTab(location.state.defaultTab);
+    }
+  }, [location.state]);
 
   if (!user) {
-    // redirect to login preserving where user was going
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Mock user data
-  // Use authenticated user for profile header when available
   const userData = {
     name: user.name,
     email: user.email,
@@ -33,12 +29,6 @@ const AccountDashboard = () => {
     avatar: user.avatar,
     memberSince: user.createdAt
   };
-
-  // Mock recent orders
-  const recentOrders = [];
-
-  // Mock favorite items
-  const favoriteItems = [];  
 
   const tabs = [
     { id: 'overview', name: 'Overview', icon: 'LayoutDashboard' },
@@ -71,34 +61,6 @@ const AccountDashboard = () => {
     console.log('Customize item:', itemId);
   };
 
-  const handleRedeemReward = (rewardId) => {
-    console.log('Redeem reward:', rewardId);
-  };
-
-  const handleViewRewardHistory = () => {
-    console.log('View reward history');
-  };
-
-  const handleSetNutritionGoals = () => {
-    console.log('Set nutrition goals');
-  };
-
-  const handleViewNutritionDetails = () => {
-    console.log('View nutrition details');
-  };
-
-  const handleAddFamilyMember = () => {
-    console.log('Add family member');
-  };
-
-  const handleEditFamilyMember = (memberId) => {
-    console.log('Edit family member:', memberId);
-  };
-
-  const handleViewFamilyOrders = (memberId) => {
-    console.log('View family orders for:', memberId);
-  };
-
   const handleQuickAction = (actionId) => {
     console.log('Quick action:', actionId);
   };
@@ -110,9 +72,6 @@ const AccountDashboard = () => {
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <RecentOrders />
-              <QuickActions onAction={handleQuickAction} />
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <FavoriteItems />
             </div>
           </div>

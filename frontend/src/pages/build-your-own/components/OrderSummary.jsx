@@ -18,59 +18,88 @@ const OrderSummary = ({
         { id: 'thick-crust', name: 'Masa gruesa', price: 1.50 },
         { id: 'gluten-free', name: 'Base sin gluten', price: 3.00 }
       ],
-      sauce: [
-        { id: 'tomato', name: 'Classic Tomato', price: 0 },
-        { id: 'white', name: 'White Sauce', price: 1.00 },
-        { id: 'pesto', name: 'Basil Pesto', price: 1.50 },
-        { id: 'bbq', name: 'BBQ Sauce', price: 1.00 }
+      salsa: [
+        { id: 'tomato', name: 'Salsa de tomate', price: 0 },
+        { id: 'pomodoro', name: 'Salsa pomodoro', price: 1.00 }
+
+
       ],
-      cheese: [
-        { id: 'mozzarella', name: 'Mozzarella', price: 0 },
-        { id: 'cheddar', name: 'Cheddar', price: 1.00 },
-        { id: 'vegan-cheese', name: 'Vegan Cheese', price: 2.50 },
-        { id: 'goat-cheese', name: 'Goat Cheese', price: 2.00 }
+      queso: [
+        { id: 'mozzarella', name: 'Muzzarella', price: 0 },
+        { id: '4-cheese', name: '4 Quesos', price: 2.50 },
+        { id: 'roquefort', name: 'Roquefort', price: 2.00 }
+
       ],
       toppings: [
         { id: 'pepperoni', name: 'Pepperoni', price: 2.00 },
-        { id: 'mushrooms', name: 'Mushrooms', price: 1.50 },
-        { id: 'bell-peppers', name: 'Bell Peppers', price: 1.50 },
-        { id: 'olives', name: 'Black Olives', price: 1.50 },
-        { id: 'chicken', name: 'Grilled Chicken', price: 3.00 },
-        { id: 'bacon', name: 'Bacon', price: 2.50 }
+        { id: 'sausage', name: 'Salchicha', price: 2.00 },
+        { id: 'tuna', name: 'Atún', price: 2.00 },
+        { id: 'mushroom', name: 'Champiñon', price: 1.50 },
+        { id: 'egg', name: 'Huevo', price: 1.00 },
+        { id: 'oregano', name: 'Orégano', price: 0.50 },
+        { id: 'pepper', name: 'Morrón', price: 1.50 },
+        { id: 'tomato', name: 'Tomate', price: 1.50 },
+        { id: 'olive', name: 'Aceituna', price: 1.50 },
+        { id: 'cucumber', name: 'Pepino', price: 1.50 },
+        { id: 'basil', name: 'Albahaca', price: 1.50 },
+        { id: 'onion', name: 'Cebolla', price: 1.50 },
+        { id: 'ham', name: 'Jamón', price: 1.50 },
+        { id: 'chicken', name: 'Pollo', price: 3.00 },
+        { id: 'anchovy', name: 'Anchoa', price: 1.50 },
+        { id: 'bacon', name: 'Panceta', price: 2.50 }
       ]
     };
 
     const burgerIngredients = {
       base: [
-        { id: 'brioche', name: 'Brioche Bun', price: 0 },
-        { id: 'whole-wheat', name: 'Whole Wheat Bun', price: 1.00 },
-        { id: 'gluten-free-bun', name: 'Gluten-Free Bun', price: 2.50 },
-        { id: 'lettuce-wrap', name: 'Lettuce Wrap', price: 1.50 }
+        { id: 'potato', name: 'Pan brioche', price: 0 },
+        { id: 'whole-wheat', name: 'Pan integral', price: 1.00 },
+        { id: 'gluten-free-bun', name: 'Pan sin gluten', price: 2.50 }
+
       ],
-      patty: [
-        { id: 'beef', name: 'Beef Patty', price: 0 },
-        { id: 'turkey', name: 'Turkey Patty', price: 1.50 },
-        { id: 'plant-based', name: 'Plant-Based Patty', price: 3.00 },
-        { id: 'black-bean', name: 'Black Bean Patty', price: 2.50 }
+      carne: [
+        { id: 'beef', name: 'Carne de res', price: 0 },
+        { id: 'chicken', name: 'Pollo', price: 1.50 },
+        { id: 'pork', name: 'Cerdo', price: 2.00 },
+        { id: 'lentils', name: 'Lentejas', price: 2.00 },
+        { id: 'soy', name: 'Soja', price: 2.00 },
+        { id: 'salmon', name: 'Salmón', price: 2.50 }
       ],
-      cheese: [
-        { id: 'american', name: 'American Cheese', price: 0.50 },
-        { id: 'swiss', name: 'Swiss Cheese', price: 1.00 },
-        { id: 'vegan-cheese-slice', name: 'Vegan Cheese', price: 1.50 },
-        { id: 'blue-cheese', name: 'Blue Cheese', price: 1.50 }
+      queso: [
+        { id: 'american', name: 'Americano', price: 0.50 },
+        { id: 'cheddar', name: 'Cheddar', price: 1.00 },
+        { id: 'swiss', name: 'Suizo', price: 1.00 },
+        { id: 'blue-cheese', name: 'Queso azul', price: 1.50 }
       ],
       toppings: [
-        { id: 'lettuce', name: 'Lettuce', price: 0.50 },
-        { id: 'tomato', name: 'Tomato', price: 0.50 },
-        { id: 'onion', name: 'Red Onion', price: 0.50 },
-        { id: 'pickles', name: 'Pickles', price: 0.50 },
+        { id: 'lettuce', name: 'Lechuga', price: 0.50 },
+        { id: 'tomato', name: 'Tomate', price: 0.50 },
+        { id: 'onion', name: 'Cebolla', price: 0.50 },
+        { id: 'pickles', name: 'Pepinillos', price: 0.50 },
         { id: 'bacon-burger', name: 'Bacon', price: 2.00 },
-        { id: 'avocado', name: 'Avocado', price: 2.50 }
+        { id: 'jalapenos', name: 'Jalapeños', price: 1.00 },
+        { id: 'mushrooms', name: 'Champiñones', price: 1.50 },
+        { id: 'fried-egg', name: 'Huevo frito', price: 1.50 },
+        { id: 'peppers', name: 'Morrones', price: 1.50 },
+        { id: 'ham', name: 'Jamón', price: 1.50 },
+        { id: 'avocado', name: 'Aguacate', price: 2.50 }
+      ],
+      aderezos: [
+        { id: 'ketchup', name: 'Kétchup', price: 0.25 },
+        { id: 'mustard', name: 'Mostaza', price: 0.25 },
+        { id: 'mayo', name: 'Mayonesa', price: 0.25 },
+        { id: 'bbq-sauce', name: 'Salsa BBQ', price: 0.50 },
+        { id: 'aioli', name: 'Alioli', price: 0.50 },
+        { id: 'ranch-dressing', name: 'Aderezo ranch', price: 0.50 },
+        { id: 'special-sauce', name: 'Salsa especial', price: 1.00 },
+        { id: 'hot-sauce', name: 'Salsa picante', price: 0.50 },
+        { id: 'creole', name: 'Criolla', price: 0.50 }
       ]
     };
 
     return productType === 'pizza' ? pizzaIngredients : burgerIngredients;
   };
+
 
   const ingredientDetails = getIngredientDetails();
   const selectedItems = [];
@@ -152,23 +181,34 @@ const OrderSummary = ({
 
       {/* Price Breakdown */}
       <div className="mb-6 p-4 border border-border rounded-lg">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-text-secondary">Precio base</span>
-          <span className="text-text-primary">${(productType === 'pizza' ? 12.99 : 9.99)?.toFixed(2)}</span>
-        </div>
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-text-secondary">Extras</span>
-          <span className="text-text-primary">
-            +${selectedItems?.reduce((sum, item) => sum + item?.price, 0)?.toFixed(2)}
-          </span>
-        </div>
-        <div className="border-t border-border pt-2 mt-2">
-          <div className="flex justify-between items-center">
-            <span className="font-semibold text-text-primary">Total</span>
-            <span className="font-bold text-xl text-primary">${totalPrice?.toFixed(2)}</span>
-          </div>
-        </div>
+        {(() => {
+          const basePrice = productType === 'pizza' ? 12.99 : 9.99;
+          const extrasPrice = selectedItems.reduce((sum, item) => sum + item.price, 0);
+          const total = basePrice + extrasPrice;
+
+          return (
+              <>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-text-secondary">Precio base</span>
+                  <span className="text-text-primary">${basePrice.toFixed(2)}</span>
+                </div>
+
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-text-secondary">Extras</span>
+                  <span className="text-text-primary">+${extrasPrice.toFixed(2)}</span>
+                </div>
+
+                <div className="border-t border-border pt-2 mt-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold text-text-primary">Total</span>
+                    <span className="font-bold text-xl text-primary">${total.toFixed(2)}</span>
+                  </div>
+                </div>
+              </>
+          );
+        })()}
       </div>
+
 
       {/* Action Buttons */}
       <div className="space-y-3">
@@ -182,7 +222,7 @@ const OrderSummary = ({
         >
           Agregar al Carrito
         </Button>
-        
+
         <Button 
           variant="outline" 
           fullWidth 

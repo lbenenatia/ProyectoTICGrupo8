@@ -35,17 +35,17 @@ export default function AdminOverview() {
   ];
 
   return (
-    <div className="grid md:grid-cols-2 gap-6">
-      {cards.map(({ label, value, icon: Icon, color }) => (
+    <div className="grid grid-cols-2 gap-6">
+      {cards.map(({ label, value, icon: Icon }) => (
         <div
           key={label}
-          className="flex items-center justify-between p-6 rounded-lg shadow-md bg-gray-50 dark:bg-gray-900"
+          className="w-full h-full flex items-center justify-between p-6 rounded-lg border-2 border-primary bg-primary/5 hover:bg-primary/10 transition-warm"
         >
           <div>
             <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
             <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100">{value}</h2>
           </div>
-          <div className={`p-3 rounded-full ${color} text-white`}>
+          <div className="p-3 rounded-full bg-orange-500 text-white">
             <Icon size={24} />
           </div>
         </div>

@@ -22,6 +22,7 @@ export default function ManageProducts() {
         headers: { Authorization: `Bearer ${token}` },
       }),
     ]);
+    console.log("CATEGORÍAS:", c.data);
     setProducts(p.data);
     setCategories(c.data);
   };
@@ -87,9 +88,9 @@ export default function ManageProducts() {
         </button>
       </div>
 
-      <table className="w-full border-collapse">
+      <table className="w-full border-collapse rounded-lg overflow-hidden">
         <thead>
-          <tr className="bg-gray-100 dark:bg-gray-700">
+          <tr className="bg-primary/10 dark:bg-primary/20">
             <th className="p-3 text-left">Nombre</th>
             <th className="p-3 text-left">Precio</th>
             <th className="p-3 text-left">Categoría</th>

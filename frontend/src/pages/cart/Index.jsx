@@ -8,12 +8,14 @@ import PaymentMethodCard from './components/PaymentMethodCard';
 import OrderTrackingCard from './components/OrderTrackingCard';
 import QuickReorderCard from './components/QuickReorderCard';
 import { useCart } from '../../context/CartContext';
+import { useNavigate } from 'react-router-dom';
 
 const CartPage = () => {
   const [activeTab, setActiveTab] = useState('new-order');
   const [selectedDeliveryOption, setSelectedDeliveryOption] = useState('delivery');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('card');
   const [deliveryAddress, setDeliveryAddress] = useState(null);
+  const navigate = useNavigate();
 
   const {
     items: cartItems,
@@ -26,7 +28,6 @@ const CartPage = () => {
     addToCart
   } = useCart();
 
-  // --- DIRECCIÓN GUARDADA ---
   useEffect(() => {
     const storedAddress = localStorage.getItem('deliveryAddress');
     if (storedAddress) {
@@ -47,7 +48,6 @@ const CartPage = () => {
     localStorage.setItem('deliveryAddress', JSON.stringify(newAddress));
   };
 
-  // --- TARJETAS GUARDADAS ---
   const [savedCards, setSavedCards] = useState(() => {
     try {
       const raw = localStorage.getItem('savedCards');
@@ -91,7 +91,6 @@ const CartPage = () => {
     );
   };
 
-  // --- CALCULAR TOTALES ---
   const calculateOrderTotals = () => {
     const deliveryFee = selectedDeliveryOption === 'delivery' ? 2.99 : 0;
     const tax = subtotal * 0.08;
@@ -101,7 +100,6 @@ const CartPage = () => {
 
   const { deliveryFee, tax, total: totalOrder } = calculateOrderTotals();
 
-  // --- HANDLERS DE PEDIDOS ---
   const handlePlaceOrder = () => {
     const newOrder = placeOrder(selectedDeliveryOption);
     if (newOrder) setActiveTab('tracking');
@@ -126,7 +124,20 @@ const CartPage = () => {
     console.log('Modificar antes de volver a pedir:', order);
   };
 
-  // --- ÚLTIMOS 5 PEDIDOS ---
+  const handleRemoveItem = (itemId) => {
+    setCartItems(prev => {
+      const updated = prev.filter(item => item.id !== itemId);
+      localStorage.setItem("cartItems", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const handleModifyItem = (itemId) => {
+    const itemToEdit = cartItems.find(item => item.id === itemId);
+    localStorage.setItem("itemToEdit", JSON.stringify(itemToEdit));
+    navigate(`/customize?product=${itemToEdit.product.type}`);
+  };
+
   const recentOrders = useMemo(() => getLastFiveOrders(), [orders]);
 
   const tabs = [
@@ -204,9 +215,9 @@ const CartPage = () => {
                     subtotal={subtotal}
                     deliveryFee={deliveryFee}
                     tax={tax}
-                    total={totalOrder}
-                    onModifyItem={() => {}}
-                    onRemoveItem={() => {}}
+                    total={total}
+                    onModifyItem={handleModifyItem}
+                    onRemoveItem={handleRemoveItem}
                   />
 
                   <Button

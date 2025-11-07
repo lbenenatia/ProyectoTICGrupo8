@@ -1,99 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
+import useIngredients from '../../../hooks/useIngredients';
 
-const IngredientSelector = ({ 
-  selectedIngredients, 
-  onIngredientChange, 
-  productType, 
-  dietaryFilters 
+const IngredientSelector = ({
+  selectedIngredients,
+  onIngredientChange,
+  productType,
+  dietaryFilters
 }) => {
   const [activeCategory, setActiveCategory] = useState('base');
+  const { ingredients: apiIngredients, loading, error } = useIngredients(productType);
 
-  const pizzaIngredients = {
-    base: [
-      { id: 'thin-crust', name: 'Integral', price: 0, dietary: [], allergens: ['gluten'] },
-      { id: 'thick-crust', name: 'Napolitana', price: 1.50, dietary: [], allergens: ['gluten'] },
-      { id: 'gluten-free', name: 'Sin gluten', price: 3.00, dietary: ['Libre de gluten'], allergens: [] }
-    ],
-    salsa: [
-      { id: 'tomato', name: 'Salsa de tomate', price: 0, dietary: [], allergens: [] },
-      { id: 'pomodoro', name: 'Salsa pomodoro', price: 1.00, dietary: [], allergens: [] },
-    ],
-    queso: [
-      { id: 'mozzarella', name: 'Muzzarella', price: 0, dietary: [], allergens: [] },
-      { id: '4-cheese', name: '4 Quesos', price: 2.50, dietary: [], allergens: [] },
-      { id: 'roquefort', name: 'Roquefort', price: 2.00, dietary: [], allergens: [] }
-    ],
-    toppings: [
-      { id: 'pepperoni', name: 'Pepperoni', price: 2.00, dietary: [], allergens: [] },
-      { id: 'sausage', name: 'Salchicha', price: 2.00, dietary: [], allergens: [] },
-      { id: 'tuna', name: 'Atún', price: 2.00, dietary: [], allergens: [] },
-      { id: 'mushroom', name: 'Champiñon', price: 1.50, dietary: [], allergens: [] },
-      { id: 'egg', name: 'Huevo', price: 1.00, dietary: [], allergens: [] },
-      { id: 'oregano', name: 'Orégano', price: 0.50, dietary: [], allergens: [] },
-      { id: 'pepper', name: 'Morrón', price: 1.50, dietary: [], allergens: [] },
-      { id: 'tomato', name: 'Tomate', price: 1.50, dietary: [], allergens: [] },
-      { id: 'olive', name: 'Aceituna', price: 1.50, dietary: [], allergens: [] },
-      { id: 'cucumber', name: 'Pepino', price: 1.50, dietary: [], allergens: [] },
-      { id: 'basil', name: 'Albahaca', price: 1.50, dietary: [], allergens: [] },
-      { id: 'onion', name: 'Cebolla', price: 1.50, dietary: [], allergens: [] },
-      { id: 'ham', name: 'Jamón', price: 1.50, dietary: [], allergens: [] },
-      { id: 'chicken', name: 'Pollo', price: 3.00, dietary: [], allergens: [] },
-      { id: 'anchovy', name: 'Anchoa', price: 1.50, dietary: [], allergens: [] },
-      { id: 'bacon', name: 'Panceta', price: 2.50, dietary: [], allergens: [] }
-    ]
-  };
-
-  const burgerIngredients = {
-    base: [
-      { id: 'potato', name: 'Brioche Bun', price: 0, dietary: [], allergens: ['gluten'] },
-      { id: 'whole-wheat', name: 'Pan integral', price: 1.00, dietary: [], allergens: ['gluten'] },
-      { id: 'gluten-free-bun', name: 'Pan sin gluten', price: 2.50, dietary: ['Libre de gluten'], allergens: [] }
-    ],
-    carne: [
-      { id: 'beef', name: 'Carne de res', price: 0, dietary: [], allergens: [] },
-      { id: 'chicken', name: 'Pollo', price: 1.50, dietary: [], allergens: [] },
-      { id: 'pork', name: 'Cerdo', price: 2.00, dietary: [], allergens: [] },
-      { id: 'lentils', name: 'Lentejas', price: 2.00, dietary: [], allergens: [] },
-      { id: 'soy', name: 'Soja', price: 2.00, dietary: [], allergens: [] },
-      { id: 'salmon', name: 'Salmón', price: 2.50, dietary: [], allergens: [] }
-    ],
-    queso: [
-      { id: 'american', name: 'Americano', price: 0.50, dietary: [], allergens: [] },
-      { id: 'cheddar', name: 'Cheddar', price: 1.00, dietary: [], allergens: [] },
-      { id: 'swiss', name: 'Suizo', price: 1.00, dietary: [], allergens: [] },
-      { id: 'blue-cheese', name: 'Queso azul', price: 1.50, dietary: [], allergens: [] }
-    ],
-    toppings: [
-      { id: 'lettuce', name: 'Lechuga', price: 0.50, dietary: [], allergens: [] },
-      { id: 'tomato', name: 'Tomate', price: 0.50, dietary: [], allergens: [] },
-      { id: 'onion', name: 'Cebolla', price: 0.50, dietary: [], allergens: [] },
-      { id: 'pickles', name: 'Pepinillos', price: 0.50, dietary: [], allergens: [] },
-      { id: 'bacon-burger', name: 'Bacon', price: 2.00, dietary: [], allergens: [] },
-      { id: 'jalapenos', name: 'Jalapeños', price: 1.00, dietary: [], allergens: [] },
-      { id: 'mushrooms', name: 'Champiñones', price: 1.50, dietary: [], allergens: [] },
-      { id: 'fried-egg', name: 'Huevo frito', price: 1.50, dietary: [], allergens: [] },
-      { id: 'peppers', name: 'Morrones', price: 1.50, dietary: [], allergens: [] },
-      { id: 'ham', name: 'Jamón', price: 1.50, dietary: [], allergens: [] },
-      { id: 'avocado', name: 'Aguacate', price: 2.50, dietary: [], allergens: [] }
-
-    ],
-    aderezos: [
-      { id: 'ketchup', name: 'Kétchup', price: 0.25, dietary: [], allergens: [] },
-      { id: 'mustard', name: 'Mostaza', price: 0.25, dietary: [], allergens: [] },
-      { id: 'mayo', name: 'Mayonesa', price: 0.25, dietary: [], allergens: [] },
-      { id: 'bbq-sauce', name: 'Salsa BBQ', price: 0.50, dietary: [], allergens: [] },
-      { id: 'aioli', name: 'Alioli', price: 0.50, dietary: [], allergens: [] },
-      { id: 'ranch-dressing', name: 'Aderezo ranch', price: 0.50, dietary: [], allergens: [] },
-      { id: 'special-sauce', name: 'Salsa especial', price: 1.00, dietary: [], allergens: [] },
-      { id: 'hot-sauce', name: 'Salsa picante', price: 0.50, dietary: [], allergens: [] },
-      { id: 'creole', name: 'Criolla', price: 0.50, dietary: [], allergens: [] }
-    ]
-  };
-
-  const ingredients = productType === 'pizza' ? pizzaIngredients : burgerIngredients;
+  // Use API ingredients if available, otherwise use empty object
+  const ingredients = apiIngredients || {};
   const categories = Object.keys(ingredients);
+
+  // Update active category when ingredients change
+  useEffect(() => {
+    if (categories.length > 0 && !categories.includes(activeCategory)) {
+      setActiveCategory(categories[0]);
+    }
+  }, [categories, activeCategory]);
 
   const filterIngredients = (items) => {
     if (!dietaryFilters || dietaryFilters?.length === 0) return items;
@@ -108,31 +36,71 @@ const IngredientSelector = ({
   const handleIngredientToggle = (categoryId, ingredientId) => {
     const currentCategory = selectedIngredients?.[categoryId] || [];
     const isSelected = currentCategory?.includes(ingredientId);
-    
+
+    // Categories that should have single selection (base categories)
+    const singleSelectCategories = ['base', 'masa', 'pan', 'carne', 'salsa'];
+    const categoryLower = categoryId?.toLowerCase();
+    const isSingleSelect = singleSelectCategories.includes(categoryLower);
+
     let newSelection;
-    if (categoryId === 'base' || categoryId === 'carne') {
-      // Single selection for base/patty
+    if (isSingleSelect) {
+      // Single selection for base/patty/sauce
       newSelection = isSelected ? [] : [ingredientId];
     } else {
       // Multiple selection for others
-      newSelection = isSelected 
+      newSelection = isSelected
         ? currentCategory?.filter(id => id !== ingredientId)
         : [...currentCategory, ingredientId];
     }
-    
+
     onIngredientChange(categoryId, newSelection);
   };
 
   const getCategoryIcon = (category) => {
+    const categoryLower = category?.toLowerCase();
     const icons = {
+      masa: 'Circle',
+      pan: 'Circle',
       base: 'Circle',
       salsa: 'Droplets',
       queso: 'Milk',
+      topping: 'Plus',
       toppings: 'Plus',
       carne: 'Beef',
+      aderezo: 'Droplets',
+      aderezos: 'Droplets',
     };
-    return icons?.[category] || 'Circle';
+    return icons[categoryLower] || 'Circle';
   };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="bg-card rounded-lg p-6 shadow-warm">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <Icon name="Loader2" size={32} className="text-primary animate-spin mx-auto mb-4" />
+            <p className="text-text-secondary">Cargando ingredientes...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="bg-card rounded-lg p-6 shadow-warm">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <Icon name="AlertCircle" size={32} className="text-destructive mx-auto mb-4" />
+            <p className="text-destructive font-medium mb-2">Error al cargar ingredientes</p>
+            <p className="text-text-secondary text-sm">{error}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-card rounded-lg p-6 shadow-warm">
@@ -161,8 +129,10 @@ const IngredientSelector = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filterIngredients(ingredients?.[activeCategory])?.map((ingredient) => {
           const isSelected = selectedIngredients?.[activeCategory]?.includes(ingredient?.id) || false;
-          const isSingleSelect = activeCategory === 'base' || activeCategory === 'carne';
-          
+          const singleSelectCategories = ['base', 'masa', 'pan', 'carne', 'salsa'];
+          const categoryLower = activeCategory?.toLowerCase();
+          const isSingleSelect = singleSelectCategories.includes(categoryLower);
+
           return (
             <div
               key={ingredient?.id}

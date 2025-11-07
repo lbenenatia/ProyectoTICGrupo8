@@ -7,8 +7,11 @@ export const CartProvider = ({ children }) => {
   const [items, setItems] = useState(() => {
     try {
       const raw = localStorage.getItem("cart");
-      return raw ? JSON.parse(raw) : [];
-    } catch {
+      const parsed = raw ? JSON.parse(raw) : [];
+      console.log('🛒 CartContext - Items cargados desde localStorage:', parsed);
+      return parsed;
+    } catch (error) {
+      console.error('❌ Error cargando carrito:', error);
       return [];
     }
   });
@@ -27,7 +30,10 @@ export const CartProvider = ({ children }) => {
   useEffect(() => {
     try {
       localStorage.setItem("cart", JSON.stringify(items));
-    } catch {}
+      console.log('💾 Guardando carrito:', items);
+    } catch (error) {
+      console.error('❌ Error guardando carrito:', error);
+    }
   }, [items]);
 
   useEffect(() => {
@@ -38,6 +44,8 @@ export const CartProvider = ({ children }) => {
 
   // --- CART FUNCTIONS ---
   const addToCart = (product, options = {}, qty = 1) => {
+    console.log('➕ addToCart llamado con:', { product, options, qty });
+    
     const { size, customizations, ingredients = [] } = options;
 
     setItems((prev) => {
@@ -51,20 +59,21 @@ export const CartProvider = ({ children }) => {
       if (idx >= 0) {
         const next = [...prev];
         next[idx].qty = (next[idx].qty || 1) + qty;
+        console.log('✅ Item actualizado:', next[idx]);
         return next;
       }
 
-      return [
-        ...prev,
-        {
-          id: Date.now(),
-          product,
-          size,
-          customizations,
-          ingredients,
-          qty,
-        },
-      ];
+      const newItem = {
+        id: Date.now(),
+        product,
+        size,
+        customizations,
+        ingredients,
+        qty,
+      };
+      
+      console.log('✅ Nuevo item agregado:', newItem);
+      return [...prev, newItem];
     });
   };
 
@@ -73,10 +82,15 @@ export const CartProvider = ({ children }) => {
       prev.map((i) => (i.id === id ? { ...i, qty: Math.max(1, qty) } : i))
     );
 
-  const removeFromCart = (id) =>
+  const removeFromCart = (id) => {
+    console.log('🗑️ Eliminando item:', id);
     setItems((prev) => prev.filter((i) => i.id !== id));
+  };
 
-  const clearCart = () => setItems([]);
+  const clearCart = () => {
+    console.log('🧹 Limpiando carrito');
+    setItems([]);
+  };
 
   // --- PLACE ORDER ---
   const placeOrder = (deliveryType = "delivery") => {
@@ -93,7 +107,7 @@ export const CartProvider = ({ children }) => {
     };
 
     setOrders((prev) => [...prev, newOrder]);
-    clearCart(); // Vacía el carrito después de hacer pedido
+    clearCart();
     return newOrder;
   };
 
@@ -118,19 +132,30 @@ export const CartProvider = ({ children }) => {
             : order
         )
       );
-    }, 30000); // cada 30 segundos cambia el estado
+    }, 30000);
 
     return () => clearInterval(interval);
   }, []);
 
   // --- CART CALCULATIONS ---
   const { cartCount, subtotal, total } = useMemo(() => {
+    console.log('🧮 Calculando totales para items:', items);
+    
     const cartCount = items.reduce((n, i) => n + (i.qty || 1), 0);
-    const subtotal = items.reduce(
-      (sum, i) => sum + (i.product?.price || 0) * (i.qty || 1),
-      0
-    );
+    
+    const subtotal = items.reduce((sum, i) => {
+      const qty = i.qty || 1;
+      const price = i.product?.price || 0;
+      
+      console.log(`  Item: ${i.product?.name}, Precio: ${price}, Qty: ${qty}`);
+      
+      return sum + (price * qty);
+    }, 0);
+    
     const total = subtotal;
+    
+    console.log('✅ Totales calculados:', { cartCount, subtotal, total });
+    
     return { cartCount, subtotal, total };
   }, [items]);
 
