@@ -21,7 +21,7 @@ public class CreationService {
 
     @Transactional
     public Creation createCreation(Long orderId, CreationType type, String size, List<Long> productIds) {
-        Order order = orderRepository.findById(orderId)
+        PurchaseOrder order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
 
         Creation creation = Creation.builder()

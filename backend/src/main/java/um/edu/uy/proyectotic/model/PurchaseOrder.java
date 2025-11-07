@@ -10,9 +10,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "order")
+@Table(name = "purchase_order")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class Order {
+public class PurchaseOrder {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

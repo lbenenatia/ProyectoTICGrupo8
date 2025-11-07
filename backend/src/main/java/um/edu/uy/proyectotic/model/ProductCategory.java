@@ -7,9 +7,13 @@ import um.edu.uy.proyectotic.model.enums.CreationType;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 @Entity
 @Table(name = "product_category")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class ProductCategory {
 
   @Id
@@ -30,7 +34,7 @@ public class ProductCategory {
   @Column(name = "`order`")
   private Integer order;
 
-  @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = false)
-  @Builder.Default
+  @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
+  @JsonIgnore
   private List<Product> products = new ArrayList<>();
 }

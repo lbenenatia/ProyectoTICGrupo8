@@ -21,7 +21,7 @@ public class TicketService {
 
     @Transactional
     public Ticket generateTicket(Long orderId, PaymentMethod paymentMethod) {
-        Order order = orderRepository.findById(orderId)
+        PurchaseOrder order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
 
         if (order.getTicket() != null)

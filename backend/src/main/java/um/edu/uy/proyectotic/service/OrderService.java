@@ -19,11 +19,11 @@ public class OrderService {
     private final UserRepository userRepository;
 
     @Transactional
-    public Order createOrder(String userEmail) {
+    public PurchaseOrder createOrder(String userEmail) {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        Order order = Order.builder()
+        PurchaseOrder order = PurchaseOrder.builder()
                 .user(user)
                 .creationDate(LocalDateTime.now())
                 .status(OrderStatus.CREADO)
@@ -33,13 +33,13 @@ public class OrderService {
         return orderRepository.save(order);
     }
 
-    public List<Order> getOrdersByUser(String userEmail) {
+    public List<PurchaseOrder> getOrdersByUser(String userEmail) {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
         return orderRepository.findAllByUser(user);
     }
 
-    public Order getOrderById(Long orderId) {
+    public PurchaseOrder getOrderById(Long orderId) {
         return orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
     }

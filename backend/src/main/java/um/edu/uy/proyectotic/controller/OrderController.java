@@ -20,7 +20,7 @@ public class OrderController {
     private final TicketService ticketService;
 
     @PostMapping("/create/{userEmail}")
-    public ResponseEntity<Order> createOrder(@PathVariable String userEmail) {
+    public ResponseEntity<PurchaseOrder> createOrder(@PathVariable String userEmail) {
         return ResponseEntity.ok(orderService.createOrder(userEmail));
     }
 
@@ -43,12 +43,12 @@ public class OrderController {
     }
 
     @GetMapping("/user/{userEmail}")
-    public ResponseEntity<List<Order>> getOrdersByUser(@PathVariable String userEmail) {
+    public ResponseEntity<List<PurchaseOrder>> getOrdersByUser(@PathVariable String userEmail) {
         return ResponseEntity.ok(orderService.getOrdersByUser(userEmail));
     }
 
     @GetMapping("/{orderId}")
-    public ResponseEntity<Order> getOrderById(@PathVariable Long orderId) {
+    public ResponseEntity<PurchaseOrder> getOrderById(@PathVariable Long orderId) {
         return ResponseEntity.ok(orderService.getOrderById(orderId));
     }
 }

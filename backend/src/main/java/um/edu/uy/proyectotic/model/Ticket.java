@@ -18,7 +18,7 @@ public class Ticket {
 
   @OneToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(name = "order_id", nullable = false, unique = true)
-  private Order order;
+  private PurchaseOrder order;
 
   @Column(name = "emission_date", nullable = false)
   private LocalDate emissionDate = LocalDate.now();

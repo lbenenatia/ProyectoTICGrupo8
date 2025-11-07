@@ -1,19 +1,23 @@
 package um.edu.uy.proyectotic.controller.admin;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import um.edu.uy.proyectotic.dto.ProductDto;
 import um.edu.uy.proyectotic.model.*;
 import um.edu.uy.proyectotic.model.enums.CreationType;
 import um.edu.uy.proyectotic.repository.*;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin/catalog")
 @RequiredArgsConstructor
 @CrossOrigin(origins = {"http://localhost:5173"})
+@Transactional
 public class AdminCatalogController {
 
   private final ProductCategoryRepository categoryRepo;
@@ -76,8 +80,29 @@ public class AdminCatalogController {
   }
 
   @GetMapping("/products")
-  public ResponseEntity<List<Product>> listProducts(@RequestParam(required = false) Long categoryId) {
-    if (categoryId == null) return ResponseEntity.ok(productRepo.findAll());
-    return ResponseEntity.ok(productRepo.findAllByCategoryId(categoryId));
+  public ResponseEntity<List<ProductDto>> listProducts(@RequestParam(required = false) Long categoryId) {
+      List<Product> products;
+      if (categoryId == null) {
+          products = productRepo.findAllWithCategory();
+      } else {
+          products = productRepo.findAllByCategoryIdWithCategory(categoryId);
+      }
+      
+      List<ProductDto> productDtos = products.stream()
+          .map(this::convertToDto)
+          .collect(Collectors.toList());
+      
+      return ResponseEntity.ok(productDtos);
+  }
+
+  private ProductDto convertToDto(Product product) {
+    return ProductDto.builder()
+        .id(product.getId())
+        .name(product.getName())
+        .price(product.getPrice())
+        .available(product.isAvailable())
+        .categoryId(product.getCategory().getId())
+        .categoryName(product.getCategory().getName())
+        .build();
   }
 }

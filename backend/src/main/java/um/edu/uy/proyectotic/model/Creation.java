@@ -20,7 +20,7 @@ public class Creation {
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "order_id", nullable = false)
-  private Order order;
+  private PurchaseOrder order;
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 10)
