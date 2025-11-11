@@ -25,7 +25,9 @@ const CartPage = () => {
     setOrders,
     placeOrder,
     getLastFiveOrders,
-    addToCart
+    addToCart,
+    removeFromCart, // ✅ Agregar esta función del contexto
+    updateQty // ✅ Agregar por si la necesitas
   } = useCart();
 
   useEffect(() => {
@@ -124,18 +126,38 @@ const CartPage = () => {
     console.log('Modificar antes de volver a pedir:', order);
   };
 
+  // ✅ CORREGIDO: Usar removeFromCart del contexto en lugar de setCartItems
   const handleRemoveItem = (itemId) => {
-    setCartItems(prev => {
-      const updated = prev.filter(item => item.id !== itemId);
-      localStorage.setItem("cartItems", JSON.stringify(updated));
-      return updated;
-    });
+    console.log('🗑️ Eliminando item del carrito:', itemId);
+    removeFromCart(itemId);
   };
 
+  // ✅ CORREGIDO: Función para modificar items
   const handleModifyItem = (itemId) => {
     const itemToEdit = cartItems.find(item => item.id === itemId);
-    localStorage.setItem("itemToEdit", JSON.stringify(itemToEdit));
-    navigate(`/customize?product=${itemToEdit.product.type}`);
+    if (itemToEdit) {
+      console.log('✏️ Editando item:', itemToEdit);
+      
+      // Si es un producto personalizado
+      if (itemToEdit.customProduct) {
+        const customData = itemToEdit.customProduct.customData;
+        localStorage.setItem("itemToEdit", JSON.stringify({
+          ...itemToEdit.customProduct,
+          editMode: true,
+          originalItemId: itemId
+        }));
+        navigate(`/customize?product=${customData.type}&edit=true`);
+      } 
+      // Si es un producto normal del menú
+      else if (itemToEdit.product) {
+        localStorage.setItem("itemToEdit", JSON.stringify({
+          ...itemToEdit,
+          editMode: true
+        }));
+        // Navegar a la página de personalización o producto
+        navigate(`/product/${itemToEdit.product.id}?edit=true`);
+      }
+    }
   };
 
   const recentOrders = useMemo(() => getLastFiveOrders(), [orders]);
@@ -163,22 +185,24 @@ const CartPage = () => {
         </section>
 
         {/* Tabs */}
-        <section className="bg-card border-b border-border sticky top-16 z-40">
+        <section className="sticky top-16 z-40">
           <div className="max-w-7xl mx-auto px-4 lg:px-6">
-            <div className="flex space-x-1 overflow-x-auto py-4">
-              {tabs.map((tab) => (
-                <Button
-                  key={tab.id}
-                  variant={activeTab === tab.id ? "default" : "ghost"}
-                  size="sm"
-                  iconName={tab.icon}
-                  iconPosition="left"
-                  onClick={() => setActiveTab(tab.id)}
-                  className="whitespace-nowrap"
-                >
-                  {tab.label}
-                </Button>
-              ))}
+            <div className="bg-background"> {/* Fondo neutral */}
+              <div className="inline-flex space-x-1 bg-card border border-border rounded-lg p-2"> {/* Todo en una línea */}
+                {tabs.map((tab) => (
+                  <Button
+                    key={tab.id}
+                    variant={activeTab === tab.id ? "default" : "ghost"}
+                    size="sm"
+                    iconName={tab.icon}
+                    iconPosition="left"
+                    onClick={() => setActiveTab(tab.id)}
+                    className="whitespace-nowrap"
+                  >
+                    {tab.label}
+                  </Button>
+                ))}
+              </div>
             </div>
           </div>
         </section>
@@ -215,7 +239,7 @@ const CartPage = () => {
                     subtotal={subtotal}
                     deliveryFee={deliveryFee}
                     tax={tax}
-                    total={total}
+                    total={totalOrder} // ✅ Corregido: usar totalOrder en lugar de total
                     onModifyItem={handleModifyItem}
                     onRemoveItem={handleRemoveItem}
                   />

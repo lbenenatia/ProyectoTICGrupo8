@@ -10,6 +10,7 @@ const BuildYourOwn = () => {
   const [selectedType, setSelectedType] = useState('pizza');
   const [selectedSize, setSelectedSize] = useState('null'); 
   const [selectedIngredients, setSelectedIngredients] = useState({});
+  const [ingredientsData, setIngredientsData] = useState({});
 
   const handleTypeChange = (type) => {
     if (type === 'pizza') {
@@ -43,6 +44,18 @@ const BuildYourOwn = () => {
   const handleSaveRecipe = () => {
     alert('Receta guardada con éxito.');
   };
+
+  useEffect(() => {
+    const editItem = localStorage.getItem("editItem");
+    if (editItem) {
+      const parsed = JSON.parse(editItem);
+      // precargar datos
+      setSelectedType(parsed.type);
+      setSelectedSize(parsed.size);
+      setSelectedIngredients(parsed.ingredients);
+      localStorage.removeItem("editItem");
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -80,6 +93,7 @@ const BuildYourOwn = () => {
                   productType={selectedType}
                   selectedIngredients={selectedIngredients}
                   onIngredientChange={handleIngredientChange}
+                  onIngredientsLoaded={(data) => setIngredientsData(data)}
                 />
               )}
             </div>
@@ -90,6 +104,7 @@ const BuildYourOwn = () => {
                 productType={selectedType}
                 selectedSize={selectedSize}
                 selectedIngredients={selectedIngredients}
+                ingredientsData={ingredientsData}
                 onAddToCart={handleAddToCart}
                 onSaveRecipe={handleSaveRecipe}
               />

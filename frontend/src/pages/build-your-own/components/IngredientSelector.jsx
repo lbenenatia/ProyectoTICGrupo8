@@ -1,16 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import Icon from '../../../components/AppIcon';
-import Button from '../../../components/ui/Button';
 import useIngredients from '../../../hooks/useIngredients';
 
 const IngredientSelector = ({
   selectedIngredients,
   onIngredientChange,
   productType,
-  dietaryFilters
+  dietaryFilters,
+  onIngredientsLoaded
 }) => {
   const [activeCategory, setActiveCategory] = useState('base');
   const { ingredients: apiIngredients, loading, error } = useIngredients(productType);
+
+  useEffect(() => {
+    if (apiIngredients && Object.keys(apiIngredients).length > 0) {
+      onIngredientsLoaded && onIngredientsLoaded(apiIngredients);
+    }
+  }, [apiIngredients, onIngredientsLoaded]);
+
 
   // Use API ingredients if available, otherwise use empty object
   const ingredients = apiIngredients || {};

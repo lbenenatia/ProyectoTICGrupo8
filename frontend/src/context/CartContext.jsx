@@ -3,6 +3,7 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from "
 const CartContext = createContext(null);
 
 export const CartProvider = ({ children }) => {
+  
   // --- CART STATE ---
   const [items, setItems] = useState(() => {
     try {
@@ -26,6 +27,16 @@ export const CartProvider = ({ children }) => {
     }
   });
 
+  // --- FAVORITES STATE ---
+  const [favorites, setFavorites] = useState(() => {
+    try {
+      const raw = localStorage.getItem("favorites");
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
+
   // --- SYNC TO LOCALSTORAGE ---
   useEffect(() => {
     try {
@@ -42,13 +53,38 @@ export const CartProvider = ({ children }) => {
     } catch {}
   }, [orders]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem("favorites", JSON.stringify(favorites));
+    } catch (error) {
+      console.error('❌ Error guardando favoritos:', error);
+    }
+  }, [favorites]);
+
   // --- CART FUNCTIONS ---
   const addToCart = (product, options = {}, qty = 1) => {
     console.log('➕ addToCart llamado con:', { product, options, qty });
     
-    const { size, customizations, ingredients = [] } = options;
-
+    // Detectar si es un producto personalizado (tiene customData)
+    const isCustomProduct = product?.customData !== undefined;
+    
     setItems((prev) => {
+      // Para productos personalizados, siempre crear nuevo item (son únicos)
+      if (isCustomProduct) {
+        const newItem = {
+          id: product.id || `custom-${Date.now()}`,
+          product: null, // No hay producto base
+          customProduct: product, // Guardamos el producto personalizado completo
+          qty: qty,
+        };
+        
+        console.log('✅ Nuevo producto personalizado agregado:', newItem);
+        return [...prev, newItem];
+      }
+      
+      // Para productos normales del menú (lógica original)
+      const { size, customizations, ingredients = [] } = options;
+
       const idx = prev.findIndex(
         (i) =>
           i.product?.id === product?.id &&
@@ -72,7 +108,7 @@ export const CartProvider = ({ children }) => {
         qty,
       };
       
-      console.log('✅ Nuevo item agregado:', newItem);
+      console.log('✅ Nuevo item normal agregado:', newItem);
       return [...prev, newItem];
     });
   };
@@ -90,6 +126,41 @@ export const CartProvider = ({ children }) => {
   const clearCart = () => {
     console.log('🧹 Limpiando carrito');
     setItems([]);
+  };
+
+  // --- FAVORITES FUNCTIONS ---
+  const addToFavorites = (recipe) => {
+    const newFavorite = {
+      id: `FAV-${Date.now()}`,
+      ...recipe,
+      createdAt: new Date().toISOString(),
+    };
+
+    setFavorites((prev) => {
+      // Evitar duplicados basados en nombre e ingredientes
+      const isDuplicate = prev.some(
+        (fav) =>
+          fav.name === recipe.name &&
+          JSON.stringify(fav.customData?.ingredients) === JSON.stringify(recipe.customData?.ingredients)
+      );
+
+      if (isDuplicate) {
+        alert('⚠️ Esta receta ya está en tus favoritos');
+        return prev;
+      }
+
+      const updated = [...prev, newFavorite];
+      alert('✅ Receta agregada a favoritos');
+      return updated;
+    });
+  };
+
+  const removeFromFavorites = (favoriteId) => {
+    setFavorites((prev) => prev.filter((fav) => fav.id !== favoriteId));
+  };
+
+  const clearFavorites = () => {
+    setFavorites([]);
   };
 
   // --- PLACE ORDER ---
@@ -145,10 +216,17 @@ export const CartProvider = ({ children }) => {
     
     const subtotal = items.reduce((sum, i) => {
       const qty = i.qty || 1;
+      
+      // Para productos personalizados
+      if (i.customProduct) {
+        const price = i.customProduct?.price || 0;
+        console.log(`  Producto personalizado: ${i.customProduct?.name}, Precio: ${price}, Qty: ${qty}`);
+        return sum + (price * qty);
+      }
+      
+      // Para productos normales
       const price = i.product?.price || 0;
-      
-      console.log(`  Item: ${i.product?.name}, Precio: ${price}, Qty: ${qty}`);
-      
+      console.log(`  Producto normal: ${i.product?.name}, Precio: ${price}, Qty: ${qty}`);
       return sum + (price * qty);
     }, 0);
     
@@ -174,8 +252,13 @@ export const CartProvider = ({ children }) => {
       placeOrder,
       setOrders,
       getLastFiveOrders,
+      // Favorites functions
+      favorites,
+      addToFavorites,
+      removeFromFavorites,
+      clearFavorites,
     }),
-    [items, cartCount, subtotal, total, orders]
+    [items, cartCount, subtotal, total, orders, favorites]
   );
 
   return (

@@ -1,19 +1,21 @@
+// OrderSummaryCard.jsx - versión mejorada
 import React from 'react';
 import Button from '../../../components/ui/Button';
+import Icon from '../../../components/AppIcon';
 
 const OrderSummaryCard = ({ items, subtotal, deliveryFee, tax, total, onModifyItem, onRemoveItem }) => {
-  // Validar que todo exista
   const safeItems = items || [];
   const safeSubtotal = subtotal || 0;
   const safeDeliveryFee = deliveryFee || 0;
   const safeTax = tax || 0;
   const safeTotal = total || 0;
 
-  console.log('📋 OrderSummaryCard renderizando con:', { 
-    itemsCount: safeItems.length, 
-    subtotal: safeSubtotal,
-    total: safeTotal 
-  });
+  const handleRemoveClick = (itemId, itemName) => {
+    console.log('🗑️ Intentando eliminar item:', itemId, itemName);
+    if (window.confirm(`¿Estás seguro de que quieres eliminar "${itemName}" del carrito?`)) {
+      onRemoveItem(itemId);
+    }
+  };
 
   return (
     <div className="bg-card rounded-lg border border-border p-6 shadow-warm">
@@ -26,52 +28,133 @@ const OrderSummaryCard = ({ items, subtotal, deliveryFee, tax, total, onModifyIt
       <div className="space-y-4 mb-6">
         {safeItems.length === 0 ? (
           <div className="text-center py-8">
+            <Icon name="ShoppingCart" size={48} className="text-text-secondary mx-auto mb-4" />
             <p className="text-text-secondary">Tu carrito está vacío</p>
           </div>
         ) : (
           safeItems.map((item, index) => {
-            // Extraer datos de forma segura - NUNCA renderizar objetos directamente
-            const productName = item?.product?.name || 'Producto';
-            const productPrice = item?.product?.price || 0;
-            const quantity = item?.qty || 1;
-            const itemSize = item?.size || null;
-            
-            // IMPORTANTE: Convertir size a string legible si es necesario
-            let sizeDisplay = '';
-            if (itemSize) {
-              sizeDisplay = String(itemSize); // Asegurar que es string
+            // PRODUCTOS PERSONALIZADOS (desde Build Your Own)
+            if (item.customProduct) {
+              const customProduct = item.customProduct;
+              const customData = customProduct.customData;
+              const itemName = customProduct.name || 'Producto personalizado';
+              
+              return (
+                <div key={item.id} className="p-3 bg-background rounded-md border border-border">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <p className="font-medium text-text-primary text-sm">
+                        {itemName}
+                      </p>
+                      
+                      {/* Tamaño */}
+                      {customData?.sizeInfo && (
+                        <p className="text-xs text-text-secondary mt-1">
+                          Tamaño: {customData.sizeInfo.nameEs}
+                        </p>
+                      )}
+                      
+                      {/* INGREDIENTES */}
+                      {customData?.ingredients && customData.ingredients.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          <p className="text-xs font-medium text-text-secondary flex items-center gap-1">
+                            <Icon name="ChefHat" size={12} />
+                            Ingredientes seleccionados:
+                          </p>
+                          <div className="flex flex-wrap gap-1">
+                            {customData.ingredients.map((ingredient, idx) => (
+                              <span
+                                key={idx}
+                                className="inline-flex items-center text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full"
+                              >
+                                {ingredient.name}
+                                {ingredient.price > 0 && (
+                                  <span className="ml-1 text-[10px] opacity-75">
+                                    +${ingredient.price.toFixed(2)}
+                                  </span>
+                                )}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center justify-between mt-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-primary">
+                            ${(customProduct.price * item.qty).toFixed(2)}
+                          </span>
+                          <span className="text-xs text-text-secondary">
+                            × {item.qty}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-1 ml-2">
+                      {onModifyItem && (
+                        <Button
+                          variant="ghost"
+                          size="xs"
+                          iconName="Edit"
+                          onClick={() => onModifyItem(item.id)}
+                          title="Modificar item"
+                        />
+                      )}
+                      {onRemoveItem && (
+                        <Button
+                          variant="ghost"
+                          size="xs"
+                          iconName="Trash2"
+                          onClick={() => handleRemoveClick(item.id, itemName)}
+                          title="Eliminar item"
+                          className="text-destructive hover:bg-destructive/10"
+                        />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
             }
             
-            // Contar ingredientes sin renderizar el array
-            const ingredientsCount = Array.isArray(item?.ingredients) ? item.ingredients.length : 0;
-            
-            console.log(`  Renderizando item ${index}:`, { 
-              name: productName, 
-              price: productPrice, 
-              qty: quantity,
-              size: sizeDisplay
-            });
-            
+            // PRODUCTOS NORMALES DEL MENÚ
+            const productName = item.product?.name || 'Producto';
+            const productPrice = item.product?.price || 0;
+            const quantity = item.qty || 1;
+
             return (
-              <div key={item?.id || index} className="p-3 bg-background rounded-md border border-border">
+              <div key={item.id} className="p-3 bg-background rounded-md border border-border">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <p className="font-medium text-text-primary text-sm">
                       {productName}
                     </p>
                     
-                    {/* Mostrar tamaño SOLO si existe y es string */}
-                    {sizeDisplay && (
+                    {/* Tamaño para productos normales */}
+                    {item.size && (
                       <p className="text-xs text-text-secondary mt-1">
-                        Tamaño: {sizeDisplay}
+                        Tamaño: {item.size}
                       </p>
                     )}
                     
-                    {/* Mostrar cantidad de ingredientes sin renderizar el array */}
-                    {ingredientsCount > 0 && (
-                      <p className="text-xs text-text-secondary mt-1">
-                        {ingredientsCount} {ingredientsCount === 1 ? 'ingrediente' : 'ingredientes'}
-                      </p>
+                    {/* Ingredientes para productos normales */}
+                    {item.ingredients && item.ingredients.length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        <p className="text-xs font-medium text-text-secondary flex items-center gap-1">
+                          <Icon name="ChefHat" size={12} />
+                          Ingredientes extra:
+                        </p>
+                        <div className="flex flex-wrap gap-1">
+                          {item.ingredients.map((ingredient, idx) => (
+                            <span
+                              key={idx}
+                              className="inline-flex items-center text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full"
+                            >
+                              {ingredient.name || `Ingrediente ${idx + 1}`}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
                     )}
                     
                     <div className="flex items-center justify-between mt-2">
@@ -92,7 +175,8 @@ const OrderSummaryCard = ({ items, subtotal, deliveryFee, tax, total, onModifyIt
                         variant="ghost"
                         size="xs"
                         iconName="Edit"
-                        onClick={() => onModifyItem(item?.id)}
+                        onClick={() => onModifyItem(item.id)}
+                        title="Modificar item"
                       />
                     )}
                     {onRemoveItem && (
@@ -100,7 +184,9 @@ const OrderSummaryCard = ({ items, subtotal, deliveryFee, tax, total, onModifyIt
                         variant="ghost"
                         size="xs"
                         iconName="Trash2"
-                        onClick={() => onRemoveItem(item?.id)}
+                        onClick={() => handleRemoveClick(item.id, productName)}
+                        title="Eliminar item"
+                        className="text-destructive hover:bg-destructive/10"
                       />
                     )}
                   </div>

@@ -93,48 +93,6 @@ const QuickReorderCard = ({ favoriteOrders, recentOrders, onReorder, onModifyAnd
           </Button>
         )}
       </div>
-      {/* Quick Actions */}
-      <div className="bg-card rounded-lg border border-border p-6 shadow-warm">
-        <h3 className="text-lg font-semibold text-text-primary mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            iconName="Pizza"
-            iconPosition="left"
-            fullWidth
-          >
-            Browse Pizza Menu
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            iconName="Beef"
-            iconPosition="left"
-            fullWidth
-          >
-            Browse Burger Menu
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            iconName="ChefHat"
-            iconPosition="left"
-            fullWidth
-          >
-            Build Your Own
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            iconName="Users"
-            iconPosition="left"
-            fullWidth
-          >
-            Group Order
-          </Button>
-        </div>
-      </div>
     </div>
   );
 };
