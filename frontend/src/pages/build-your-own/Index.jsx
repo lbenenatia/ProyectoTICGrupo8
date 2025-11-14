@@ -5,12 +5,15 @@ import SizeSelector from './components/SizeSelector';
 import IngredientSelector from './components/IngredientSelector';
 import OrderSummary from './components/OrderSummary';
 import { useCart } from '../../context/CartContext';
+import ExtrasSelector from './components/ExtrasSelector';
 
 const BuildYourOwn = () => {
   const [selectedType, setSelectedType] = useState('pizza');
   const [selectedSize, setSelectedSize] = useState('null'); 
   const [selectedIngredients, setSelectedIngredients] = useState({});
+  const [selectedExtras, setSelectedExtras] = useState({});
   const [ingredientsData, setIngredientsData] = useState({});
+  const [extrasData, setExtrasData] = useState({});
 
   const handleTypeChange = (type) => {
     if (type === 'pizza') {
@@ -35,15 +38,19 @@ const BuildYourOwn = () => {
     }));
   };
 
+  const handleExtraChange = (category, extras) => {
+    setSelectedExtras((prev) => ({
+      ...prev,
+      [category]: extras,
+    }));
+  };
+
   const handleAddToCart = () => {
     alert(
       `Agregaste una ${selectedType || 'creación'} al carrito`
     );
   };
 
-  const handleSaveRecipe = () => {
-    alert('Receta guardada con éxito.');
-  };
 
   useEffect(() => {
     const editItem = localStorage.getItem("editItem");
@@ -68,7 +75,7 @@ const BuildYourOwn = () => {
               Creá Tu Propia Pizza o Hamburguesa
             </h1>
             <p className="text-lg text-text-secondary max-w-2xl mx-auto">
-              Elegí tu tipo, tamaño y los ingredientes. ¡Combiná a tu gusto!
+              Elegí tu tipo, tamaño, ingredientes y extras. ¡Combiná a tu gusto!
             </p>
           </div>
           {/* Contenido */}
@@ -88,13 +95,22 @@ const BuildYourOwn = () => {
                 />
               )}
 
-              {selectedType && selectedSize && selectedSize !== 'null' && (
+              {selectedType && (
                 <IngredientSelector
                   productType={selectedType}
                   selectedIngredients={selectedIngredients}
                   onIngredientChange={handleIngredientChange}
                   onIngredientsLoaded={(data) => setIngredientsData(data)}
                 />
+              )}
+
+              {selectedType && (
+                <ExtrasSelector
+                productType={selectedType}
+                selectedExtras={selectedExtras}
+                onExtraChange={handleExtraChange}
+                onExtrasLoaded={(data) => setExtrasData(data)}
+              />
               )}
             </div>
 
@@ -106,7 +122,6 @@ const BuildYourOwn = () => {
                 selectedIngredients={selectedIngredients}
                 ingredientsData={ingredientsData}
                 onAddToCart={handleAddToCart}
-                onSaveRecipe={handleSaveRecipe}
               />
             </div>
           </div>

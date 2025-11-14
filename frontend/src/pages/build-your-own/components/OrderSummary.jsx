@@ -8,9 +8,8 @@ const OrderSummary = ({
   selectedSize,
   selectedIngredients,
   ingredientsData,
-  onSaveRecipe,
 }) => {
-  const { addToCart, addToFavorites } = useCart(); // ✅ Agregar addToFavorites
+  const { addToCart, addToFavorites } = useCart();
 
   // 🔹 Crear lista con los ingredientes seleccionados y sus datos reales
   const selectedItems = useMemo(() => {
@@ -38,23 +37,23 @@ const OrderSummary = ({
     productType === 'pizza'
       ? {
           small: { nameEs: 'Pequeña', multiplier: 1 },
-          medium: { nameEs: 'Mediana', multiplier: 1.4 },
-          large: { nameEs: 'Grande', multiplier: 1.8 },
+          medium: { nameEs: 'Mediana', multiplier: 1.5 },
+          large: { nameEs: 'Grande', multiplier: 2 },
         }
       : {
           single: { nameEs: 'Simple', multiplier: 1 },
-          double: { nameEs: 'Doble', multiplier: 1.6 },
-          triple: { nameEs: 'Triple', multiplier: 2.2 },
+          double: { nameEs: 'Doble', multiplier: 1.5555 },
+          triple: { nameEs: 'Triple', multiplier: 2 },
         };
 
   const sizeInfo = sizeMap[selectedSize] || null;
 
-  // 🔹 Cálculo de precios
-  const basePrice = productType === 'pizza' ? 12.99 : 9.99;
+  // Cálculo de precios
+  const basePrice = productType === 'pizza' ? 12 : 9;
   const extrasPrice = selectedItems.reduce((sum, item) => sum + (item.price || 0), 0);
   const total = basePrice * (sizeInfo?.multiplier || 1) + extrasPrice;
 
-  // 🔹 Validar ingredientes obligatorios
+  // Validar ingredientes obligatorios
   const hasRequiredIngredients = useMemo(() => {
     if (productType === 'pizza') {
       const masaOk = selectedIngredients?.masa?.length > 0 || selectedIngredients?.base?.length > 0;
@@ -74,7 +73,7 @@ const OrderSummary = ({
       ? 'Seleccioná al menos una masa y una salsa.'
       : 'Seleccioná al menos un pan y una carne.';
 
-  // 🔹 Función para agregar al carrito
+  // Función para agregar al carrito
   const handleAddToCart = () => {
     const productName = productType === 'pizza' ? 'Pizza' : 'Hamburguesa';
     const sizeName = sizeInfo?.nameEs || '';
@@ -99,10 +98,9 @@ const OrderSummary = ({
     };
 
     addToCart(item);
-    alert(`✅ ${item.name} añadido al carrito con éxito.`);
   };
 
-  // 🔹 FUNCIÓN PARA AGREGAR A FAVORITOS - NUEVA
+  // Función para agregar a favoritos
   const handleAddToFavorites = () => {
     if (!hasRequiredIngredients) {
       alert('❌ ' + missingText);
@@ -182,7 +180,7 @@ const OrderSummary = ({
       {/* Precio total */}
       <div className="mb-6 p-4 border border-border rounded-lg">
         <div className="flex justify-between items-center mb-2">
-          <span className="text-text-secondary">Precio base ({sizeInfo?.nameEs || 'sin tamaño'})</span>
+          <span className="text-text-secondary">Precio base ({sizeInfo?.nameEs || '*'})</span>
           <span className="text-text-primary">${(basePrice * (sizeInfo?.multiplier || 1)).toFixed(2)}</span>
         </div>
         <div className="flex justify-between items-center mb-2">
@@ -215,7 +213,7 @@ const OrderSummary = ({
           fullWidth
           iconName="Heart"
           iconPosition="left"
-          onClick={handleAddToFavorites} // ✅ Cambiado a la nueva función
+          onClick={handleAddToFavorites}
           disabled={!hasRequiredIngredients}
         >
           Agregar a Favoritos

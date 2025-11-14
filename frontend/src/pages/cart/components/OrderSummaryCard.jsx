@@ -1,13 +1,10 @@
-// OrderSummaryCard.jsx - versión mejorada
 import React from 'react';
 import Button from '../../../components/ui/Button';
 import Icon from '../../../components/AppIcon';
 
-const OrderSummaryCard = ({ items, subtotal, deliveryFee, tax, total, onModifyItem, onRemoveItem }) => {
+const OrderSummaryCard = ({ items, deliveryFee, total, onModifyItem, onRemoveItem }) => {
   const safeItems = items || [];
-  const safeSubtotal = subtotal || 0;
   const safeDeliveryFee = deliveryFee || 0;
-  const safeTax = tax || 0;
   const safeTotal = total || 0;
 
   const handleRemoveClick = (itemId, itemName) => {
@@ -33,7 +30,7 @@ const OrderSummaryCard = ({ items, subtotal, deliveryFee, tax, total, onModifyIt
           </div>
         ) : (
           safeItems.map((item, index) => {
-            // PRODUCTOS PERSONALIZADOS (desde Build Your Own)
+            // PRODUCTOS PERSONALIZADOS
             if (item.customProduct) {
               const customProduct = item.customProduct;
               const customData = customProduct.customData;
@@ -200,16 +197,8 @@ const OrderSummaryCard = ({ items, subtotal, deliveryFee, tax, total, onModifyIt
       {/* Totales */}
       <div className="space-y-2 border-t border-border pt-4">
         <div className="flex justify-between text-sm">
-          <span className="text-text-secondary">Subtotal</span>
-          <span className="text-text-primary">${safeSubtotal.toFixed(2)}</span>
-        </div>
-        <div className="flex justify-between text-sm">
           <span className="text-text-secondary">Envío</span>
           <span className="text-text-primary">${safeDeliveryFee.toFixed(2)}</span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-text-secondary">Impuestos</span>
-          <span className="text-text-primary">${safeTax.toFixed(2)}</span>
         </div>
         <div className="flex justify-between text-lg font-semibold border-t border-border pt-2">
           <span className="text-text-primary">Total</span>

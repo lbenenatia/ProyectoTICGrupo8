@@ -43,15 +43,10 @@ const AccountDashboard = () => {
     console.log('Edit profile clicked');
   };
 
-  const handleReorder = (orderId) => {
-    console.log('Reorder clicked for:', orderId);
-  };
-
   const handleViewOrderDetails = (orderId) => {
     console.log('View order details for:', orderId);
   };
 
-  // ✅ CORREGIDO: Función para agregar al carrito desde favoritos
   const handleAddToCart = (itemId) => {
     const favorite = favorites.find(fav => fav.id === itemId);
     if (!favorite) return;
@@ -71,14 +66,12 @@ const AccountDashboard = () => {
     alert(`✅ "${favorite.name}" añadido al carrito`);
   };
 
-  // ✅ CORREGIDO: Función para eliminar favoritos
   const handleRemoveFavorite = (itemId) => {
     if (window.confirm('¿Estás seguro de que querés eliminar este favorito?')) {
       removeFromFavorites(itemId);
     }
   };
 
-  // ✅ CORREGIDO: Función para personalizar favoritos
   const handleCustomizeItem = (itemId) => {
     const favorite = favorites.find(fav => fav.id === itemId);
     if (!favorite) return;
@@ -100,10 +93,6 @@ const AccountDashboard = () => {
     }
   };
 
-  const handleQuickAction = (actionId) => {
-    console.log('Quick action:', actionId);
-  };
-
   const renderTabContent = () => {
     switch (activeTab) {
       case 'overview':
@@ -111,7 +100,6 @@ const AccountDashboard = () => {
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <RecentOrders />
-              {/* ✅ CORREGIDO: Pasar todas las props necesarias */}
               <FavoriteItems 
                 favorites={favorites}
                 onAddToCart={handleAddToCart}
@@ -127,7 +115,6 @@ const AccountDashboard = () => {
         );
       case 'favorites':
         return (
-          // ✅ CORREGIDO: Pasar todas las props necesarias
           <FavoriteItems 
             favorites={favorites}
             onAddToCart={handleAddToCart}
