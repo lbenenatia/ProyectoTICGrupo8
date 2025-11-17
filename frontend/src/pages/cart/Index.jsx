@@ -26,8 +26,8 @@ const CartPage = () => {
     placeOrder,
     getLastFiveOrders,
     addToCart,
-    removeFromCart, // ✅ Agregar esta función del contexto
-    updateQty // ✅ Agregar por si la necesitas
+    removeFromCart, // Agregar esta función del contexto
+    updateQty //  Agregar por si la necesitas
   } = useCart();
 
   useEffect(() => {
@@ -82,7 +82,7 @@ const CartPage = () => {
       };
       setSavedCards((prev) => [...prev, newCard]);
       setSelectedPaymentMethod('card');
-      alert(`Tarjeta ${brand} **** ${last4} agregada correctamente ✅`);
+      alert(`Tarjeta ${brand} **** ${last4} agregada correctamente `);
     }
   };
 
@@ -126,13 +126,13 @@ const CartPage = () => {
     console.log('Modificar antes de volver a pedir:', order);
   };
 
-  // ✅ CORREGIDO: Usar removeFromCart del contexto en lugar de setCartItems
+  //  CORREGIDO: Usar removeFromCart del contexto en lugar de setCartItems
   const handleRemoveItem = (itemId) => {
     console.log('🗑️ Eliminando item del carrito:', itemId);
     removeFromCart(itemId);
   };
 
-  // ✅ CORREGIDO: Función para modificar items
+  //  CORREGIDO: Función para modificar items
   const handleModifyItem = (itemId) => {
     const itemToEdit = cartItems.find(item => item.id === itemId);
     if (itemToEdit) {
@@ -239,7 +239,7 @@ const CartPage = () => {
                     subtotal={subtotal}
                     deliveryFee={deliveryFee}
                     tax={tax}
-                    total={totalOrder} // ✅ Corregido: usar totalOrder en lugar de total
+                    total={totalOrder} //  Corregido: usar totalOrder en lugar de total
                     onModifyItem={handleModifyItem}
                     onRemoveItem={handleRemoveItem}
                   />

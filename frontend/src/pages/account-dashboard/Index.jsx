@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from 'context/AuthContext';
-import { useCart } from 'context/CartContext'; // ✅ Agregar useCart
+import { useCart } from 'context/CartContext'; // Agregar useCart
 import Header from '../../components/ui/Header';
 import ProfileCard from './components/ProfileCard';
 import RecentOrders from './components/RecentOrders';
@@ -10,7 +10,7 @@ import Icon from '../../components/AppIcon';
 
 const AccountDashboard = () => {
   const { user } = useAuth();
-  const { favorites, removeFromFavorites, addToCart } = useCart(); // ✅ Obtener funciones del carrito
+  const { favorites, removeFromFavorites, addToCart } = useCart(); //  Obtener funciones del carrito
   const location = useLocation();
   const [activeTab, setActiveTab] = useState('overview');
 

@@ -23,7 +23,7 @@ export default function LoginPage() {
 
       console.log("Usuario autenticado:", userData);
 
-      // 🔥 Redirige una vez que el AuthContext ya tiene el usuario
+      //  Redirige una vez que el AuthContext ya tiene el usuario
       navigate(from, { replace: true });
     } catch (err) {
       setError(err.message || "No se pudo iniciar sesión");
