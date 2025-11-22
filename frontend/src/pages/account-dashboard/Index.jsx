@@ -1,24 +1,53 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from 'context/AuthContext';
-import { useCart } from 'context/CartContext'; // Agregar useCart
+import { useCart } from 'context/CartContext';
 import Header from '../../components/ui/Header';
 import ProfileCard from './components/ProfileCard';
 import RecentOrders from './components/RecentOrders';
 import FavoriteItems from './components/FavoriteItems';
+import AddressesCard from './components/AddressesCard';
+import CardsInfo from './components/CardsInfo';
+import AddressModal from './components/AddressModal';
+import CardModal from './components/CardModal';
 import Icon from '../../components/AppIcon';
 
 const AccountDashboard = () => {
   const { user } = useAuth();
-  const { favorites, removeFromFavorites, addToCart } = useCart(); //  Obtener funciones del carrito
+  const { favorites, removeFromFavorites, addToCart } = useCart();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState('overview');
+  const [addresses, setAddresses] = useState([]);
+  const [cards, setCards] = useState([]);
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const [isCardModalOpen, setIsCardModalOpen] = useState(false);
+  const [selectedAddress, setSelectedAddress] = useState(null);
+  const [selectedCard, setSelectedCard] = useState(null);
 
   useEffect(() => {
     if (location.state?.defaultTab) {
       setActiveTab(location.state.defaultTab);
     }
   }, [location.state]);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!user?.email) return;
+
+      try {
+        const response = await fetch(`http://localhost:4028/api/user/${user.email}`);
+        if (response.ok) {
+          const data = await response.json();
+          setAddresses(data.addresses || []);
+          setCards(data.cards || []);
+        }
+      } catch (error) {
+        console.error('Error al cargar datos del usuario:', error);
+      }
+    };
+
+    fetchUserData();
+  }, [user]);
 
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
@@ -34,11 +63,11 @@ const AccountDashboard = () => {
 
   const tabs = [
     { id: 'overview', name: 'Overview', icon: 'LayoutDashboard' },
+    { id: 'profile', name: 'Perfil', icon: 'User' },
     { id: 'orders', name: 'Orders', icon: 'ShoppingBag' },
     { id: 'favorites', name: 'Favorites', icon: 'Heart' },
   ];
 
-  // Event handlers
   const handleEditProfile = () => {
     console.log('Edit profile clicked');
   };
@@ -51,7 +80,6 @@ const AccountDashboard = () => {
     const favorite = favorites.find(fav => fav.id === itemId);
     if (!favorite) return;
 
-    // Crear item para el carrito basado en el favorito
     const cartItem = {
       id: `custom-${Date.now()}`,
       name: favorite.name,
@@ -63,7 +91,6 @@ const AccountDashboard = () => {
     };
 
     addToCart(cartItem);
-    alert(`✅ "${favorite.name}" añadido al carrito`);
   };
 
   const handleRemoveFavorite = (itemId) => {
@@ -76,20 +103,85 @@ const AccountDashboard = () => {
     const favorite = favorites.find(fav => fav.id === itemId);
     if (!favorite) return;
 
-    // Guardar el favorito para editar y navegar a la página de personalización
     localStorage.setItem("editingFavorite", JSON.stringify({
       ...favorite,
       editMode: true
     }));
 
-    // Navegar a la página de personalización según el tipo de producto
     if (favorite.customData?.type === 'pizza') {
       window.location.href = '/customize?product=pizza&edit=true';
     } else if (favorite.customData?.type === 'burger') {
       window.location.href = '/customize?product=burger&edit=true';
     } else {
-      // Si no tiene tipo definido, ir a la página principal de personalización
       window.location.href = '/customize';
+    }
+  };
+
+  const handleAddAddress = () => {
+    setSelectedAddress(null);
+    setIsAddressModalOpen(true);
+  };
+
+  const handleEditAddress = (address) => {
+    setSelectedAddress(address);
+    setIsAddressModalOpen(true);
+  };
+
+  const handleDeleteAddress = async (addressId) => {
+    if (!window.confirm('¿Estás seguro de que querés eliminar esta dirección?')) return;
+
+    try {
+      const response = await fetch(`http://localhost:4028/api/user/addresses/${addressId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        setAddresses(addresses.filter(a => a.id !== addressId));
+      }
+    } catch (error) {
+      console.error('Error al eliminar dirección:', error);
+    }
+  };
+
+  const handleSaveAddress = (savedAddress) => {
+    if (selectedAddress) {
+      setAddresses(addresses.map(a => a.id === savedAddress.id ? savedAddress : a));
+    } else {
+      setAddresses([...addresses, savedAddress]);
+    }
+  };
+
+  const handleAddCard = () => {
+    setSelectedCard(null);
+    setIsCardModalOpen(true);
+  };
+
+  const handleEditCard = (card) => {
+    setSelectedCard(card);
+    setIsCardModalOpen(true);
+  };
+
+  const handleDeleteCard = async (cardId) => {
+    if (!window.confirm('¿Estás seguro de que querés eliminar esta tarjeta?')) return;
+
+    try {
+      const response = await fetch(`http://localhost:4028/api/user/cards/${cardId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        setCards(cards.filter(c => c.id !== cardId));
+      }
+    } catch (error) {
+      console.error('Error al eliminar tarjeta:', error);
+    }
+  };
+
+  const handleSaveCard = (savedCard) => {
+    if (selectedCard) {
+      setCards(cards.map(c => c.id === savedCard.id ? savedCard : c));
+    } else {
+      setCards([...cards, savedCard]);
     }
   };
 
@@ -100,11 +192,30 @@ const AccountDashboard = () => {
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <RecentOrders />
-              <FavoriteItems 
+              <FavoriteItems
                 favorites={favorites}
                 onAddToCart={handleAddToCart}
                 onRemoveFavorite={handleRemoveFavorite}
                 onCustomize={handleCustomizeItem}
+              />
+            </div>
+          </div>
+        );
+      case 'profile':
+        return (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <AddressesCard
+                addresses={addresses}
+                onEditAddress={handleEditAddress}
+                onAddAddress={handleAddAddress}
+                onDeleteAddress={handleDeleteAddress}
+              />
+              <CardsInfo
+                cards={cards}
+                onEditCard={handleEditCard}
+                onAddCard={handleAddCard}
+                onDeleteCard={handleDeleteCard}
               />
             </div>
           </div>
@@ -115,7 +226,7 @@ const AccountDashboard = () => {
         );
       case 'favorites':
         return (
-          <FavoriteItems 
+          <FavoriteItems
             favorites={favorites}
             onAddToCart={handleAddToCart}
             onRemoveFavorite={handleRemoveFavorite}
@@ -127,7 +238,7 @@ const AccountDashboard = () => {
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <RecentOrders />
-              <FavoriteItems 
+              <FavoriteItems
                 favorites={favorites}
                 onAddToCart={handleAddToCart}
                 onRemoveFavorite={handleRemoveFavorite}
@@ -176,6 +287,23 @@ const AccountDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Modales */}
+      <AddressModal
+        isOpen={isAddressModalOpen}
+        onClose={() => setIsAddressModalOpen(false)}
+        onSave={handleSaveAddress}
+        address={selectedAddress}
+        userEmail={user?.email}
+      />
+
+      <CardModal
+        isOpen={isCardModalOpen}
+        onClose={() => setIsCardModalOpen(false)}
+        onSave={handleSaveCard}
+        card={selectedCard}
+        userEmail={user?.email}
+      />
     </div>
   );
 };

@@ -67,7 +67,7 @@ const IngredientSelector = ({
     const categoryLower = category?.toLowerCase();
     const icons = {
       masa: 'Circle',
-      pan: 'Circle',
+      pan: 'Burger',
       base: 'Circle',
       salsa: 'Droplets',
       queso: 'Milk',

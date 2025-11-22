@@ -16,7 +16,6 @@ const useIngredients = (productType) => {
         setLoading(true);
         setError(null);
 
-        // Map productType to match backend enum (pizza -> PIZZA, burger -> BURGER)
         const type = productType === 'pizza' ? 'PIZZA' : 'BURGER';
 
         console.log('Fetching ingredients for type:', type);
@@ -32,22 +31,25 @@ const useIngredients = (productType) => {
         }
 
         const data = await response.json();
-        console.log('Received data:', data);
+        console.log('Received ingredients data:', data);
 
-        // Transform the data to match the component's expected format
-        const transformedData = {};
+        const filteredData = {};
         Object.keys(data).forEach(categoryName => {
-          transformedData[categoryName.toLowerCase()] = data[categoryName].map(product => ({
-            id: product.id.toString(),
-            name: product.name,
-            price: parseFloat(product.price),
-            dietary: [],
-            allergens: []
-          }));
+          const categoryLower = categoryName.toLowerCase();
+          
+          if (categoryLower !== 'bebida' && categoryLower !== 'acompañamiento') {
+            filteredData[categoryLower] = data[categoryName].map(product => ({
+              id: product.id.toString(),
+              name: product.name,
+              price: parseFloat(product.price),
+              dietary: [],
+              allergens: []
+            }));
+          }
         });
 
-        console.log('Transformed data:', transformedData);
-        setIngredients(transformedData);
+        console.log('Filtered ingredients data:', filteredData);
+        setIngredients(filteredData);
       } catch (err) {
         const errorMessage = err.message || 'No se pudo conectar con el servidor';
         setError(errorMessage);

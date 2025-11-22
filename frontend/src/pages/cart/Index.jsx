@@ -26,8 +26,8 @@ const CartPage = () => {
     placeOrder,
     getLastFiveOrders,
     addToCart,
-    removeFromCart, // Agregar esta función del contexto
-    updateQty //  Agregar por si la necesitas
+    removeFromCart,
+    updateQty
   } = useCart();
 
   useEffect(() => {
@@ -126,17 +126,15 @@ const CartPage = () => {
     console.log('Modificar antes de volver a pedir:', order);
   };
 
-  //  CORREGIDO: Usar removeFromCart del contexto en lugar de setCartItems
   const handleRemoveItem = (itemId) => {
-    console.log('🗑️ Eliminando item del carrito:', itemId);
+    console.log('Eliminando item del carrito:', itemId);
     removeFromCart(itemId);
   };
 
-  //  CORREGIDO: Función para modificar items
   const handleModifyItem = (itemId) => {
     const itemToEdit = cartItems.find(item => item.id === itemId);
     if (itemToEdit) {
-      console.log('✏️ Editando item:', itemToEdit);
+      console.log('Editando item:', itemToEdit);
       
       // Si es un producto personalizado
       if (itemToEdit.customProduct) {
@@ -147,13 +145,7 @@ const CartPage = () => {
           originalItemId: itemId
         }));
         navigate(`/customize?product=${customData.type}&edit=true`);
-      } 
-      // Si es un producto normal del menú
-      else if (itemToEdit.product) {
-        localStorage.setItem("itemToEdit", JSON.stringify({
-          ...itemToEdit,
-          editMode: true
-        }));
+      } else {
         // Navegar a la página de personalización o producto
         navigate(`/product/${itemToEdit.product.id}?edit=true`);
       }
@@ -239,7 +231,7 @@ const CartPage = () => {
                     subtotal={subtotal}
                     deliveryFee={deliveryFee}
                     tax={tax}
-                    total={totalOrder} //  Corregido: usar totalOrder en lugar de total
+                    total={totalOrder}
                     onModifyItem={handleModifyItem}
                     onRemoveItem={handleRemoveItem}
                   />

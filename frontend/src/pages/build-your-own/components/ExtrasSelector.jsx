@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Icon from '../../../components/AppIcon';
-import useIngredients from '../../../hooks/useIngredients';
+import useExtras from '../../../hooks/useExtras';
 
 const ExtrasSelector = ({
   selectedIngredients,
@@ -10,27 +10,26 @@ const ExtrasSelector = ({
   onIngredientsLoaded
 }) => {
   const [activeCategory, setActiveCategory] = useState('bebida');
-  const { ingredients: apiIngredients, loading, error } = useIngredients(productType);
+  const { extras: apiExtras, loading, error } = useExtras(productType);
 
   useEffect(() => {
-    if (apiIngredients && Object.keys(apiIngredients).length > 0) {
-      onIngredientsLoaded && onIngredientsLoaded(apiIngredients);
+    if (apiExtras && Object.keys(apiExtras).length > 0) {
+      onIngredientsLoaded && onIngredientsLoaded(apiExtras);
     }
-  }, [apiIngredients, onIngredientsLoaded]);
+  }, [apiExtras, onIngredientsLoaded]);
 
+  // Use API extras if available, otherwise use empty object
+  const extras = apiExtras || {};
+  const categories = Object.keys(extras);
 
-  // Use API ingredients if available, otherwise use empty object
-  const ingredients = apiIngredients || {};
-  const categories = Object.keys(ingredients);
-
-  // Update active category when ingredients change
+  // Update active category when extras change
   useEffect(() => {
     if (categories.length > 0 && !categories.includes(activeCategory)) {
       setActiveCategory(categories[0]);
     }
   }, [categories, activeCategory]);
 
-  const filterIngredients = (items) => {
+  const filterExtras = (items) => {
     if (!dietaryFilters || dietaryFilters?.length === 0) return items;
     
     return items?.filter(item => {
@@ -67,7 +66,7 @@ const ExtrasSelector = ({
     const categoryLower = category?.toLowerCase();
     const icons = {
       bebida: 'cup-soda',
-      acompañamiento: 'salad',
+      acompañamiento: 'salad'
     };
     return icons[categoryLower] || 'Circle';
   };
@@ -124,25 +123,25 @@ const ExtrasSelector = ({
           </button>
         ))}
       </div>
-      {/* Ingredients Grid */}
+      {/* Extras Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filterIngredients(ingredients?.[activeCategory])?.map((ingredient) => {
-          const isSelected = selectedIngredients?.[activeCategory]?.includes(ingredient?.id) || false;
+        {filterExtras(extras?.[activeCategory])?.map((extra) => {
+          const isSelected = selectedIngredients?.[activeCategory]?.includes(extra?.id) || false;
           const singleSelectCategories = ['bebida', 'acompañamiento'];
           const categoryLower = activeCategory?.toLowerCase();
           const isSingleSelect = singleSelectCategories.includes(categoryLower);
 
           return (
             <div
-              key={ingredient?.id}
+              key={extra?.id}
               className={`border-2 rounded-lg p-4 cursor-pointer transition-warm ${
                 isSelected
                   ? 'border-primary bg-primary/5' :'border-border hover:border-primary/50'
               }`}
-              onClick={() => handleIngredientToggle(activeCategory, ingredient?.id)}
+              onClick={() => handleIngredientToggle(activeCategory, extra?.id)}
             >
               <div className="flex items-start justify-between mb-2">
-                <h3 className="font-medium text-text-primary">{ingredient?.name}</h3>
+                <h3 className="font-medium text-text-primary">{extra?.name}</h3>
                 <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
                   isSelected ? 'bg-primary border-primary' : 'border-border'
                 }`}>
@@ -151,11 +150,11 @@ const ExtrasSelector = ({
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-primary">
-                  {ingredient?.price === 0 ? 'Gratis' : `+$${ingredient?.price?.toFixed(2)}`}
+                  {extra?.price === 0 ? 'Gratis' : `+$${extra?.price?.toFixed(2)}`}
                 </span>
-                {ingredient?.dietary?.length > 0 && (
+                {extra?.dietary?.length > 0 && (
                   <div className="flex flex-wrap gap-1">
-                    {ingredient?.dietary?.slice(0, 2)?.map((diet) => (
+                    {extra?.dietary?.slice(0, 2)?.map((diet) => (
                       <span
                         key={diet}
                         className="text-xs bg-success/10 text-success px-2 py-1 rounded-full"
@@ -166,10 +165,10 @@ const ExtrasSelector = ({
                   </div>
                 )}
               </div>
-              {ingredient?.allergens?.length > 0 && (
+              {extra?.allergens?.length > 0 && (
                 <div className="mt-2">
                   <p className="text-xs text-warning">
-                    Contiene: {ingredient?.allergens?.join(', ')}
+                    Contiene: {extra?.allergens?.join(', ')}
                   </p>
                 </div>
               )}
