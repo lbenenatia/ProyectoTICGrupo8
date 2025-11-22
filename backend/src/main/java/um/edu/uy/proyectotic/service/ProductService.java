@@ -12,6 +12,7 @@ import um.edu.uy.proyectotic.repository.ProductRepository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.LinkedHashMap;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,31 +37,64 @@ public class ProductService {
     }
 
     public Map<String, List<ProductDto>> getProductsByCreationType(CreationType creationType) {
-        // Get categories specific to this type
-        List<ProductCategory> specificCategories = productCategoryRepository.findAllByApplicableTypeOrderByOrderAsc(creationType);
+        try {
+            System.out.println("=== DEBUG ProductService START ===");
+            System.out.println("Looking for creation type: " + creationType);
+            
+            List<ProductCategory> specificCategories = productCategoryRepository.findAllByApplicableTypeOrderByOrderAsc(creationType);
+            System.out.println("Specific categories found: " + specificCategories.size());
+            specificCategories.forEach(cat -> System.out.println(" - " + cat.getName() + " (order: " + cat.getOrder() + ")"));
 
-        // Get categories that are BOTH (shared between pizza and burger)
-        List<ProductCategory> sharedCategories = productCategoryRepository.findAllByApplicableTypeOrderByOrderAsc(CreationType.BOTH);
+            List<ProductCategory> sharedCategories = productCategoryRepository.findAllByApplicableTypeOrderByOrderAsc(CreationType.BOTH);
+            System.out.println("Shared categories found: " + sharedCategories.size());
+            sharedCategories.forEach(cat -> System.out.println(" - " + cat.getName() + " (order: " + cat.getOrder() + ")"));
 
-        // Combine both lists
-        List<ProductCategory> allCategories = new ArrayList<>(specificCategories);
-        allCategories.addAll(sharedCategories);
+            System.out.println("BOTH categories names:");
+            sharedCategories.forEach(cat -> {
+                System.out.println(" - " + cat.getName() + " (id: " + cat.getId() + ")");
+                System.out.println("   Products count: " + cat.getProducts().size());
+                System.out.println("   Available products: " + 
+                    cat.getProducts().stream().filter(Product::isAvailable).count());
+            });
 
-        // Sort by order
-        allCategories.sort((a, b) -> {
-            if (a.getOrder() == null) return 1;
-            if (b.getOrder() == null) return -1;
-            return a.getOrder().compareTo(b.getOrder());
-        });
+            List<ProductCategory> allCategories = new ArrayList<>(specificCategories);
+            allCategories.addAll(sharedCategories);
 
-        return allCategories.stream()
-            .collect(Collectors.toMap(
-                ProductCategory::getName,
-                category -> category.getProducts().stream()
+            allCategories.sort((a, b) -> {
+                if (a.getOrder() == null) return 1;
+                if (b.getOrder() == null) return -1;
+                return a.getOrder().compareTo(b.getOrder());
+            });
+
+            Map<String, List<ProductDto>> result = new LinkedHashMap<>();
+            
+            for (ProductCategory category : allCategories) {
+                String categoryName = category.getName();
+                System.out.println("Processing category: " + categoryName);
+                
+                if (result.containsKey(categoryName)) {
+                    System.out.println("WARNING: Skipping duplicate category: " + categoryName);
+                    continue;
+                }
+                
+                List<ProductDto> products = category.getProducts().stream()
                     .filter(Product::isAvailable)
                     .map(this::convertToDto)
-                    .collect(Collectors.toList())
-            ));
+                    .collect(Collectors.toList());
+                    
+                result.put(categoryName, products);
+            }
+            
+            System.out.println("=== DEBUG ProductService END ===");
+            System.out.println("Final result categories: " + result.keySet());
+            System.out.println("Final result size: " + result.size());
+            return result;
+            
+        } catch (Exception e) {
+            System.err.println("ERROR in getProductsByCreationType: " + e.getMessage());
+            e.printStackTrace();
+            return new LinkedHashMap<>();
+        }
     }
 
     private ProductDto convertToDto(Product product) {

@@ -31,7 +31,7 @@ public class ProductCategory {
   @Column(nullable = false)
   private boolean mandatory = false;
 
-  @Column(name = "`order`")
+  @Column(name = "display_order")
   private Integer order;
 
   @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)

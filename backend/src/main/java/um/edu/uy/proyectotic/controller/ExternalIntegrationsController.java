@@ -47,7 +47,7 @@ public class ExternalIntegrationsController {
 
   @GetMapping("/bps/users/count")
   public ResponseEntity<CountResponse> getUsersCount() {
-    long total = userRepository.count(); // disponible por JpaRepository
+    long total = userRepository.count();
     return ResponseEntity.ok(new CountResponse(total));
   }
 }

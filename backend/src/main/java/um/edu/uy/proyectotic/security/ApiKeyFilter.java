@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
+
 import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
@@ -13,10 +14,10 @@ public class ApiKeyFilter extends OncePerRequestFilter {
 
   @Value("${api.keys.dgi:}")
   private String dgiApiKey;
-  
+
   @Value("${api.keys.bps:}")
   private String bpsApiKey;
-  
+
   @Value("${api.keys.payments:}")
   private String paymentsApiKey;
 
