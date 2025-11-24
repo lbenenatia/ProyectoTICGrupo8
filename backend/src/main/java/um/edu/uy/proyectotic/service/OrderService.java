@@ -26,7 +26,7 @@ public class OrderService {
         PurchaseOrder order = PurchaseOrder.builder()
                 .user(user)
                 .creationDate(LocalDateTime.now())
-                .status(OrderStatus.CREADO)
+                .status(OrderStatus.QUEUE)
                 .total(BigDecimal.ZERO)
                 .build();
 

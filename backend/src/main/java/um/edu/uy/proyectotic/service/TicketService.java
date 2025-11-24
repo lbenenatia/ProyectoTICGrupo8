@@ -41,7 +41,7 @@ public class TicketService {
                 .paymentMethod(paymentMethod)
                 .build();
 
-        order.setStatus(OrderStatus.PAGADO);
+        order.setStatus(OrderStatus.PREPARING);
         orderRepository.save(order);
 
         return ticketRepository.save(ticket);
