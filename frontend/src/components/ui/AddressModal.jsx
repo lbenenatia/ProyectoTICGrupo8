@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import Button from '../../../components/ui/Button';
-import Input from '../../../components/ui/Input';
-import Icon from '../../../components/AppIcon';
+import Button from './Button';
+import Input from './Input';
+import Icon from '../AppIcon';
 
 const AddressModal = ({ isOpen, onClose, onSave, address, userEmail }) => {
   const [formData, setFormData] = useState({

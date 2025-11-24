@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
 import Icon from "../../../components/AppIcon";
+import { useAuth } from "context/AuthContext"; // 🔹 NUEVO
 
 const DeliveryOptionsCard = ({
   selectedOption,
@@ -9,6 +10,8 @@ const DeliveryOptionsCard = ({
   deliveryAddress,
   onAddressChange,
 }) => {
+  const { user } = useAuth(); // 🔹 usuario actual
+
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [addresses, setAddresses] = useState([]);
   const [form, setForm] = useState({
@@ -23,14 +26,31 @@ const DeliveryOptionsCard = ({
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState("");
 
+  // 🔹 Helper para key por usuario
+  const getAddressesKey = () => {
+    const email = user?.email || "guest";
+    return `addresses_${email}`;
+  };
+
   useEffect(() => {
-    const saved = localStorage.getItem("addresses");
+    if (!user?.email) return;
+
+    const addressesKey = getAddressesKey();
+    const saved = localStorage.getItem(addressesKey);
     if (saved) {
-      const parsed = JSON.parse(saved);
-      setAddresses(parsed);
-      if (parsed.length > 0 && !deliveryAddress) onAddressChange(parsed[0]);
+      try {
+        const parsed = JSON.parse(saved);
+        setAddresses(parsed);
+
+        // Si no hay domicilio seleccionado aún, usamos el último
+        if (parsed.length > 0 && !deliveryAddress) {
+          onAddressChange(parsed[parsed.length - 1]);
+        }
+      } catch {
+        setAddresses([]);
+      }
     }
-  }, []);
+  }, [user]); // se recarga cuando cambia el usuario
 
   useEffect(() => {
     if (!successMessage) return;
@@ -110,7 +130,10 @@ const DeliveryOptionsCard = ({
     const newAddress = { ...form, id: Date.now() };
     const updated = [...addresses, newAddress];
     setAddresses(updated);
-    localStorage.setItem("addresses", JSON.stringify(updated));
+
+    const addressesKey = getAddressesKey();
+    localStorage.setItem(addressesKey, JSON.stringify(updated));
+
     onAddressChange(newAddress);
     setShowAddressForm(false);
     setForm({
@@ -129,7 +152,10 @@ const DeliveryOptionsCard = ({
   const handleDeleteAddress = (id) => {
     const updated = addresses.filter((a) => a.id !== id);
     setAddresses(updated);
-    localStorage.setItem("addresses", JSON.stringify(updated));
+
+    const addressesKey = getAddressesKey();
+    localStorage.setItem(addressesKey, JSON.stringify(updated));
+
     if (deliveryAddress?.id === id) onAddressChange(null);
   };
 

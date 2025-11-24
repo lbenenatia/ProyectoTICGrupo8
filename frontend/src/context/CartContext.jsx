@@ -1,101 +1,129 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { useAuth } from "../context/AuthContext";
 
 const CartContext = createContext(null);
 
+function safeParseArray(raw) {
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function cleanCartItems(items) {
+  if (!Array.isArray(items)) return [];
+  return items
+    .filter((i) => i && (i.product || i.customProduct))
+    .map((i) => ({
+      ...i,
+      qty: typeof i.qty === "number" && i.qty > 0 ? i.qty : 1,
+    }));
+}
+
 export const CartProvider = ({ children }) => {
-  
-  // --- CART STATE ---
-  const [items, setItems] = useState(() => {
-    try {
-      const raw = localStorage.getItem("cart");
-      const parsed = raw ? JSON.parse(raw) : [];
-      console.log(' CartContext - Items cargados desde localStorage:', parsed);
-      return parsed;
-    } catch (error) {
-      console.error('Error cargando carrito:', error);
-      return [];
-    }
-  });
+  const { user } = useAuth();
+  const userKey = user?.email || "guest";
 
-  // --- ORDERS STATE ---
-  const [orders, setOrders] = useState(() => {
-    try {
-      const raw = localStorage.getItem("orders");
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [items, setItems] = useState([]);
 
-  // --- FAVORITES STATE ---
-  const [favorites, setFavorites] = useState(() => {
-    try {
-      const raw = localStorage.getItem("favorites");
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [orders, setOrders] = useState([]);
 
-  // --- SYNC TO LOCALSTORAGE ---
-  useEffect(() => {
-    try {
-      localStorage.setItem("cart", JSON.stringify(items));
-      console.log(' Guardando carrito:', items);
-    } catch (error) {
-      console.error('Error guardando carrito:', error);
-    }
-  }, [items]);
+  const [favorites, setFavorites] = useState([]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem("orders", JSON.stringify(orders));
-    } catch {}
-  }, [orders]);
+    if (!user) {
+      setItems([]);
+      setOrders([]);
+      setFavorites([]);
+
+      localStorage.removeItem("cart_guest");
+      localStorage.removeItem("orders_guest");
+      localStorage.removeItem("favorites_guest");
+      return;
+    }
+
+    const cartRaw = localStorage.getItem(`cart_${userKey}`);
+    const ordersRaw = localStorage.getItem(`orders_${userKey}`);
+    const favsRaw = localStorage.getItem(`favorites_${userKey}`);
+
+    const loadedItems = cleanCartItems(safeParseArray(cartRaw));
+    const loadedOrders = safeParseArray(ordersRaw);
+    const loadedFavs = safeParseArray(favsRaw);
+
+    setItems(loadedItems);
+    setOrders(loadedOrders);
+    setFavorites(loadedFavs);
+  }, [userKey, user]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem("favorites", JSON.stringify(favorites));
-    } catch (error) {
-      console.error('Error guardando favoritos:', error);
-    }
-  }, [favorites]);
+    if (!user) return;
 
-  // --- CART FUNCTIONS ---
+    try {
+      localStorage.setItem(`cart_${userKey}`, JSON.stringify(items));
+    } catch (error) {
+      console.error("Error guardando carrito:", error);
+    }
+  }, [items, userKey, user]);
+
+  useEffect(() => {
+    if (!user) return;
+    try {
+      localStorage.setItem(`orders_${userKey}`, JSON.stringify(orders));
+    } catch (error) {
+      console.error("Error guardando orders:", error);
+    }
+  }, [orders, userKey, user]);
+
+  useEffect(() => {
+    if (!user) return;
+    try {
+      localStorage.setItem(`favorites_${userKey}`, JSON.stringify(favorites));
+    } catch (error) {
+      console.error("Error guardando favoritos:", error);
+    }
+  }, [favorites, userKey, user]);
+
   const addToCart = (product, options = {}, qty = 1) => {
-    console.log('addToCart llamado con:', { product, options, qty });
-    
-    // Detectar si es un producto personalizado (tiene customData)
+    console.log("addToCart llamado con:", { product, options, qty });
+
     const isCustomProduct = product?.customData !== undefined;
-    
+
     setItems((prev) => {
-      // Para productos personalizados, siempre crear nuevo item (son únicos)
+      const cleanedPrev = cleanCartItems(prev);
+
       if (isCustomProduct) {
         const newItem = {
           id: product.id || `custom-${Date.now()}`,
-          product: null, // No hay producto base
-          customProduct: product, // Guardamos el producto personalizado completo
+          product: null,
+          customProduct: product,
           qty: qty,
         };
-        
-        console.log(' Nuevo producto personalizado agregado:', newItem);
-        return [...prev, newItem];
+        console.log("Nuevo producto personalizado agregado:", newItem);
+        return [...cleanedPrev, newItem];
       }
-      
-      // Para productos normales del menú (lógica original)
+
       const { size, customizations, ingredients = [] } = options;
 
-      const idx = prev.findIndex(
+      const idx = cleanedPrev.findIndex(
         (i) =>
           i.product?.id === product?.id &&
-          JSON.stringify(i.ingredients || []) === JSON.stringify(ingredients || []) &&
+          JSON.stringify(i.ingredients || []) ===
+            JSON.stringify(ingredients || []) &&
           i.size === size
       );
 
       if (idx >= 0) {
-        const next = [...prev];
+        const next = [...cleanedPrev];
         next[idx].qty = (next[idx].qty || 1) + qty;
-        console.log('Item actualizado:', next[idx]);
+        console.log("Item actualizado:", next[idx]);
         return next;
       }
 
@@ -107,28 +135,28 @@ export const CartProvider = ({ children }) => {
         ingredients,
         qty,
       };
-      
-      console.log(' Nuevo item normal agregado:', newItem);
-      return [...prev, newItem];
+      console.log("Nuevo item normal agregado:", newItem);
+      return [...cleanedPrev, newItem];
     });
   };
 
   const updateQty = (id, qty) =>
     setItems((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, qty: Math.max(1, qty) } : i))
+      cleanCartItems(prev).map((i) =>
+        i.id === id ? { ...i, qty: Math.max(1, qty) } : i
+      )
     );
 
   const removeFromCart = (id) => {
-    console.log('Eliminando item:', id);
-    setItems((prev) => prev.filter((i) => i.id !== id));
+    console.log("Eliminando item:", id);
+    setItems((prev) => cleanCartItems(prev).filter((i) => i.id !== id));
   };
 
   const clearCart = () => {
-    console.log(' Limpiando carrito');
+    console.log("Limpiando carrito");
     setItems([]);
   };
 
-  // --- FAVORITES FUNCTIONS ---
   const addToFavorites = (recipe) => {
     const newFavorite = {
       id: `FAV-${Date.now()}`,
@@ -137,107 +165,105 @@ export const CartProvider = ({ children }) => {
     };
 
     setFavorites((prev) => {
-      // Evitar duplicados basados en nombre e ingredientes
-      const isDuplicate = prev.some(
+      const cleanedPrev = Array.isArray(prev) ? prev : [];
+
+      const isDuplicate = cleanedPrev.some(
         (fav) =>
           fav.name === recipe.name &&
-          JSON.stringify(fav.customData?.ingredients) === JSON.stringify(recipe.customData?.ingredients)
+          JSON.stringify(fav.customData?.ingredients) ===
+            JSON.stringify(recipe.customData?.ingredients)
       );
 
       if (isDuplicate) {
-        alert(' Esta receta ya está en tus favoritos');
-        return prev;
+        alert("Esta receta ya está en tus favoritos");
+        return cleanedPrev;
       }
 
-      const updated = [...prev, newFavorite];
-      alert('Receta agregada a favoritos');
-      return updated;
+      alert("Receta agregada a favoritos");
+      return [...cleanedPrev, newFavorite];
     });
   };
 
   const removeFromFavorites = (favoriteId) => {
-    setFavorites((prev) => prev.filter((fav) => fav.id !== favoriteId));
+    setFavorites((prev) =>
+      (Array.isArray(prev) ? prev : []).filter((fav) => fav.id !== favoriteId)
+    );
   };
 
   const clearFavorites = () => {
     setFavorites([]);
   };
 
-  // --- PLACE ORDER ---
   const placeOrder = (deliveryType = "delivery") => {
-    if (items.length === 0) return null;
+    const cleanedItems = cleanCartItems(items);
+    if (cleanedItems.length === 0) return null;
 
     const newOrder = {
       id: `ORD-${Date.now()}`,
       status: "preparing",
       createdAt: new Date().toISOString(),
       deliveryType,
-      items,
+      items: cleanedItems,
       total,
       driver: null,
     };
 
-    setOrders((prev) => [...prev, newOrder]);
+    setOrders((prev) => [...(Array.isArray(prev) ? prev : []), newOrder]);
     clearCart();
     return newOrder;
   };
 
-  // --- GET LAST FIVE ORDERS ---
   const getLastFiveOrders = () => {
-    return [...orders].slice(-5).reverse();
+    const arr = Array.isArray(orders) ? orders : [];
+    return [...arr].slice(-5).reverse();
   };
 
-  // --- SIMULATE ORDER STATUS UPDATES ---
   useEffect(() => {
     const interval = setInterval(() => {
-      setOrders((prev) =>
-        prev.map((order) =>
+      setOrders((prev) => {
+        const arr = Array.isArray(prev) ? prev : [];
+        return arr.map((order) =>
           order.status === "preparing"
             ? {
                 ...order,
                 status: "out-for-delivery",
-                driver: { name: "Mike Johnson", vehicle: "Honda Civic - ABC 123" },
+                driver: {
+                  name: "Mike Johnson",
+                  vehicle: "Honda Civic - ABC 123",
+                },
               }
             : order.status === "out-for-delivery"
             ? { ...order, status: "delivered" }
             : order
-        )
-      );
+        );
+      });
     }, 30000);
 
     return () => clearInterval(interval);
   }, []);
 
-  // --- CART CALCULATIONS ---
   const { cartCount, subtotal, total } = useMemo(() => {
-    console.log(' Calculando totales para items:', items);
-    
-    const cartCount = items.reduce((n, i) => n + (i.qty || 1), 0);
-    
-    const subtotal = items.reduce((sum, i) => {
+    const safeItems = cleanCartItems(items);
+
+    const cartCount = safeItems.reduce((n, i) => n + (i.qty || 1), 0);
+
+    const subtotal = safeItems.reduce((sum, i) => {
       const qty = i.qty || 1;
-      
-      // Para productos personalizados
+
       if (i.customProduct) {
         const price = i.customProduct?.price || 0;
-        console.log(`  Producto personalizado: ${i.customProduct?.name}, Precio: ${price}, Qty: ${qty}`);
-        return sum + (price * qty);
+        return sum + price * qty;
       }
-      
-      // Para productos normales
+
       const price = i.product?.price || 0;
-      console.log(`  Producto normal: ${i.product?.name}, Precio: ${price}, Qty: ${qty}`);
-      return sum + (price * qty);
+      return sum + price * qty;
     }, 0);
-    
+
     const total = subtotal;
-    
-    console.log(' Totales calculados:', { cartCount, subtotal, total });
-    
+
     return { cartCount, subtotal, total };
   }, [items]);
 
-  // --- CONTEXT VALUE ---
   const value = useMemo(
     () => ({
       items,
@@ -252,7 +278,6 @@ export const CartProvider = ({ children }) => {
       placeOrder,
       setOrders,
       getLastFiveOrders,
-      // Favorites functions
       favorites,
       addToFavorites,
       removeFromFavorites,
@@ -268,7 +293,6 @@ export const CartProvider = ({ children }) => {
 
 export const useCart = () => {
   const ctx = useContext(CartContext);
-  if (!ctx)
-    throw new Error("useCart must be used within a CartProvider");
+  if (!ctx) throw new Error("useCart must be used within a CartProvider");
   return ctx;
 };

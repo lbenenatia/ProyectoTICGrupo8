@@ -8,8 +8,8 @@ import RecentOrders from './components/RecentOrders';
 import FavoriteItems from './components/FavoriteItems';
 import AddressesCard from './components/AddressesCard';
 import CardsInfo from './components/CardsInfo';
-import AddressModal from './components/AddressModal';
-import CardModal from './components/CardModal';
+import AddressModal from '../../components/ui/AddressModal';
+import CardModal from '../../components/ui/CardModal';
 import Icon from '../../components/AppIcon';
 
 const AccountDashboard = () => {

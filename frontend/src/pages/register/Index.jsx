@@ -66,8 +66,41 @@ const RegisterPage = () => {
             body: JSON.stringify(userData)
         });
 
-        if (response.ok) navigate('/login');
-        else setError("Error al crear usuario");
+        if (response.ok) {
+
+            const userKey = userData.email;
+
+            const addressKey = `addresses_${userKey}`;
+            const deliveryKey = `deliveryAddress_${userKey}`;
+            const cardsKey = `savedCards_${userKey}`;
+
+            const initialAddress = {
+                id: Date.now(),
+                label: userData.address?.label || "Mi domicilio",
+                street1: userData.address?.street1,
+                street2: userData.address?.street2,
+                number: userData.address?.number,
+                city: userData.address?.city,
+                state: userData.address?.state,
+                phone: userData.address?.phone,
+            };
+
+            const initialCard = {
+                id: Date.now() + 1,
+                number: userData.card?.cardNumber,      // ← CORREGIDO
+                holder: userData.card?.cardHolder,      // ← CORREGIDO
+                expiry: userData.card?.cardExpiry,      // ← CORREGIDO
+                cvv: userData.card?.cardCvv,            // ← CORREGIDO
+            };
+
+            localStorage.setItem(addressKey, JSON.stringify([initialAddress]));
+
+            localStorage.setItem(deliveryKey, JSON.stringify(initialAddress));
+
+            localStorage.setItem(cardsKey, JSON.stringify([initialCard]));
+
+            navigate('/login');
+        }
     }
 
     return (

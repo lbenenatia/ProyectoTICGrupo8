@@ -9,6 +9,8 @@ import OrderTrackingCard from './components/OrderTrackingCard';
 import QuickReorderCard from './components/QuickReorderCard';
 import { useCart } from '../../context/CartContext';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from 'context/AuthContext';
+import ConfirmModal from "../../components/ui/ConfirmModal";
 
 const CartPage = () => {
   const [activeTab, setActiveTab] = useState('new-order');
@@ -16,6 +18,8 @@ const CartPage = () => {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('card');
   const [deliveryAddress, setDeliveryAddress] = useState(null);
   const navigate = useNavigate();
+
+  const { user } = useAuth();
 
   const {
     items: cartItems,
@@ -31,23 +35,49 @@ const CartPage = () => {
   } = useCart();
 
   useEffect(() => {
-    const storedAddress = localStorage.getItem('deliveryAddress');
-    if (storedAddress) {
-      setDeliveryAddress(JSON.parse(storedAddress));
-    } else {
-      setDeliveryAddress({
-        label: "Casa",
-        address: "Av. Principal 123",
-        city: "Montevideo",
-        state: "UY",
-        zip: "11000",
-      });
+    if (!user?.email) return;
+
+    const userKey = user.email;
+    const addressesKey = `addresses_${userKey}`;
+    const deliveryKey = `deliveryAddress_${userKey}`;
+
+    const savedSelectionRaw = localStorage.getItem(deliveryKey);
+    if (savedSelectionRaw) {
+      try {
+        const parsed = JSON.parse(savedSelectionRaw);
+        setDeliveryAddress(parsed);
+        return;
+      } catch {
+      }
     }
-  }, []);
+
+    const addressesRaw = localStorage.getItem(addressesKey);
+    if (addressesRaw) {
+      try {
+        const addresses = JSON.parse(addressesRaw);
+        if (Array.isArray(addresses) && addresses.length > 0) {
+          setDeliveryAddress(addresses[addresses.length - 1]);
+          return;
+        }
+      } catch {
+      }
+    }
+
+    setDeliveryAddress(null);
+  }, [user]);
 
   const handleAddressChange = (newAddress) => {
     setDeliveryAddress(newAddress);
-    localStorage.setItem('deliveryAddress', JSON.stringify(newAddress));
+
+    if (!user?.email) return;
+    const userKey = user.email;
+    const deliveryKey = `deliveryAddress_${userKey}`;
+
+    if (newAddress) {
+      localStorage.setItem(deliveryKey, JSON.stringify(newAddress));
+    } else {
+      localStorage.removeItem(deliveryKey);
+    }
   };
 
   const [savedCards, setSavedCards] = useState(() => {
@@ -94,13 +124,12 @@ const CartPage = () => {
   };
 
   const calculateOrderTotals = () => {
-    const deliveryFee = selectedDeliveryOption === 'delivery' ? 2.99 : 0;
-    const tax = subtotal * 0.08;
-    const totalOrder = subtotal + deliveryFee + tax;
-    return { deliveryFee, tax, total: totalOrder };
+    const deliveryFee = selectedDeliveryOption === 'delivery' ? 5.00 : 0;
+    const totalOrder = subtotal + deliveryFee;
+    return { deliveryFee, total: totalOrder };
   };
 
-  const { deliveryFee, tax, total: totalOrder } = calculateOrderTotals();
+  const { deliveryFee, total: totalOrder } = calculateOrderTotals();
 
   const handlePlaceOrder = () => {
     const newOrder = placeOrder(selectedDeliveryOption);
@@ -126,39 +155,79 @@ const CartPage = () => {
     console.log('Modificar antes de volver a pedir:', order);
   };
 
-  const handleRemoveItem = (itemId) => {
-    console.log('Eliminando item del carrito:', itemId);
-    removeFromCart(itemId);
-  };
-
   const handleModifyItem = (itemId) => {
     const itemToEdit = cartItems.find(item => item.id === itemId);
-    if (itemToEdit) {
-      console.log('Editando item:', itemToEdit);
+    if (!itemToEdit) {
+      console.error("Item no encontrado");
+      return;
+    }
+
+    console.log("Editando item:", itemToEdit);
+
+    if (itemToEdit.customProduct) {
+      const customData = itemToEdit.customProduct.customData;
       
-      // Si es un producto personalizado
-      if (itemToEdit.customProduct) {
-        const customData = itemToEdit.customProduct.customData;
-        localStorage.setItem("itemToEdit", JSON.stringify({
-          ...itemToEdit.customProduct,
-          editMode: true,
-          originalItemId: itemId
-        }));
-        navigate(`/customize?product=${customData.type}&edit=true`);
-      } else {
-        // Navegar a la página de personalización o producto
-        navigate(`/product/${itemToEdit.product.id}?edit=true`);
-      }
+      console.log("CustomData del producto:", customData);
+      console.log("Ingredients array:", customData.ingredients);
+
+      // CORREGIR: Los ingredientes ya vienen en customData.ingredients como array
+      // NO intentar convertirlos de nuevo, usarlos directamente
+      const editData = {
+        ...customData,
+        editMode: true,
+        originalItemId: itemId,
+        productType: customData.type,
+        selectedSize: customData.size,
+        selectedIngredients: customData.ingredients || [], // ← Usar directamente
+        selectedExtras: customData.extras || [] // ← Usar directamente
+      };
+
+      console.log("Guardando datos para editar:", editData);
+      localStorage.setItem("editItem", JSON.stringify(editData));
+      navigate('/build-your-own');
+      
+    } else {
+      console.log('Editando producto regular:', itemToEdit);
+      navigate(`/product/${itemToEdit.product?.id}?edit=true`);
     }
   };
 
-  const recentOrders = useMemo(() => getLastFiveOrders(), [orders]);
+  const recentOrders = useMemo(() => getLastFiveOrders(), [orders, getLastFiveOrders]);
 
   const tabs = [
     { id: 'new-order', label: 'Nuevo Pedido', icon: 'ShoppingCart' },
     { id: 'tracking', label: 'Seguimiento', icon: 'MapPin' },
     { id: 'reorder', label: 'Volver a Pedir', icon: 'RotateCcw' },
   ];
+
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [itemToRemove, setItemToRemove] = useState(null);
+
+  const handleRemoveItem = (itemId) => {
+    const item = cartItems.find(i => i.id === itemId);
+    if (!item) return;
+
+    setItemToRemove(item);
+    setShowConfirm(true);
+  };
+
+  const handleConfirmRemove = () => {
+    if (itemToRemove) {
+      removeFromCart(itemToRemove.id);
+      setShowConfirm(false);
+      setItemToRemove(null);
+    }
+  };
+
+  const handleCancelRemove = () => {
+    setShowConfirm(false);
+    setItemToRemove(null);
+  };
+
+  const getItemName = (item) => {
+    if (!item) return 'este producto';
+    return item.customProduct?.name || item.name || item.product?.name || 'este producto';
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -179,8 +248,8 @@ const CartPage = () => {
         {/* Tabs */}
         <section className="sticky top-16 z-40">
           <div className="max-w-7xl mx-auto px-4 lg:px-6">
-            <div className="bg-background"> {/* Fondo neutral */}
-              <div className="inline-flex space-x-1 bg-card border border-border rounded-lg p-2"> {/* Todo en una línea */}
+            <div className="bg-background">
+              <div className="inline-flex space-x-1 bg-card border border-border rounded-lg p-2">
                 {tabs.map((tab) => (
                   <Button
                     key={tab.id}
@@ -230,7 +299,6 @@ const CartPage = () => {
                     items={cartItems}
                     subtotal={subtotal}
                     deliveryFee={deliveryFee}
-                    tax={tax}
                     total={totalOrder}
                     onModifyItem={handleModifyItem}
                     onRemoveItem={handleRemoveItem}
@@ -317,6 +385,13 @@ const CartPage = () => {
           </div>
         </section>
       </main>
+      <ConfirmModal
+        open={showConfirm}
+        title="Eliminar del carrito"
+        message={`¿Seguro que deseas eliminar "${getItemName(itemToRemove)}" del carrito?`}
+        onConfirm={handleConfirmRemove}
+        onCancel={handleCancelRemove}
+      />
     </div>
   );
 };

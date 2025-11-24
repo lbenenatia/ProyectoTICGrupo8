@@ -2,8 +2,11 @@ import React, { useState, useEffect } from "react";
 import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
 import Icon from "../../../components/AppIcon";
+import { useAuth } from "context/AuthContext";
 
 const PaymentMethodCard = ({ selectedMethod, onMethodChange }) => {
+  const { user } = useAuth();
+
   const [cards, setCards] = useState([]);
   const [showCardForm, setShowCardForm] = useState(false);
   const [form, setForm] = useState({ number: "", holder: "", expiry: "", cvv: "" });
@@ -12,10 +15,33 @@ const PaymentMethodCard = ({ selectedMethod, onMethodChange }) => {
   const [selectedCard, setSelectedCard] = useState(null);
   const [showCVV, setShowCVV] = useState(false);
 
+  const getCardsKey = () => {
+    const email = user?.email || "guest";
+    return `savedCards_${email}`;
+  };
+
   useEffect(() => {
-    const saved = localStorage.getItem("savedCards");
-    if (saved) setCards(JSON.parse(saved));
-  }, []);
+    if (!user?.email) return;
+
+    const cardsKey = getCardsKey();
+    const saved = localStorage.getItem(cardsKey);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setCards(parsed);
+
+        if (parsed.length > 0) {
+          setSelectedCard(parsed[parsed.length - 1].id);
+        }
+      } catch {
+        setCards([]);
+        setSelectedCard(null);
+      }
+    } else {
+      setCards([]);
+      setSelectedCard(null);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (!successMessage) return;
@@ -86,18 +112,28 @@ const PaymentMethodCard = ({ selectedMethod, onMethodChange }) => {
     const newCard = { id: Date.now(), ...form };
     const updated = [...cards, newCard];
     setCards(updated);
-    localStorage.setItem("savedCards", JSON.stringify(updated));
+
+    const cardsKey = getCardsKey();
+    localStorage.setItem(cardsKey, JSON.stringify(updated));
+
+    setSelectedCard(newCard.id);
     setShowCardForm(false);
     setForm({ number: "", holder: "", expiry: "", cvv: "" });
     setErrors({});
     setSuccessMessage("Tarjeta guardada correctamente.");
+    onMethodChange("card");
   };
 
   const handleDeleteCard = (id) => {
     const updated = cards.filter((c) => c.id !== id);
     setCards(updated);
-    localStorage.setItem("savedCards", JSON.stringify(updated));
-    if (selectedCard === id) setSelectedCard(null);
+
+    const cardsKey = getCardsKey();
+    localStorage.setItem(cardsKey, JSON.stringify(updated));
+
+    if (selectedCard === id) {
+      setSelectedCard(updated.length > 0 ? updated[updated.length - 1].id : null);
+    }
   };
 
   const inputRing =

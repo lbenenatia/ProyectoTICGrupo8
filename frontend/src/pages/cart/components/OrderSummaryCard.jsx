@@ -56,7 +56,7 @@ const OrderSummaryCard = ({ items, deliveryFee, total, onModifyItem, onRemoveIte
                         <div className="mt-2 space-y-1">
                           <p className="text-xs font-medium text-text-secondary flex items-center gap-1">
                             <Icon name="ChefHat" size={12} />
-                            Ingredientes seleccionados:
+                            Ingredientes:
                           </p>
                           <div className="flex flex-wrap gap-1">
                             {customData.ingredients.map((ingredient, idx) => (
@@ -68,6 +68,31 @@ const OrderSummaryCard = ({ items, deliveryFee, total, onModifyItem, onRemoveIte
                                 {ingredient.price > 0 && (
                                   <span className="ml-1 text-[10px] opacity-75">
                                     +${ingredient.price.toFixed(2)}
+                                  </span>
+                                )}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* EXTRAS */}
+                      {customData?.extras && customData.extras.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          <p className="text-xs font-medium text-text-secondary flex items-center gap-1">
+                            <Icon name="PlusCircle" size={12} />
+                            Extras:
+                          </p>
+                          <div className="flex flex-wrap gap-1">
+                            {customData.extras.map((extra, idx) => (
+                              <span
+                                key={idx}
+                                className="inline-flex items-center text-xs bg-accent/10 text-accent px-2 py-0.5 rounded-full"
+                              >
+                                {extra.name}
+                                {extra.price > 0 && (
+                                  <span className="ml-1 text-[10px] opacity-75">
+                                    +${extra.price.toFixed(2)}
                                   </span>
                                 )}
                               </span>
@@ -103,7 +128,7 @@ const OrderSummaryCard = ({ items, deliveryFee, total, onModifyItem, onRemoveIte
                           variant="ghost"
                           size="xs"
                           iconName="Trash2"
-                          onClick={() => handleRemoveClick(item.id, itemName)}
+                          onClick={() => onRemoveItem(item.id)}
                           title="Eliminar item"
                           className="text-destructive hover:bg-destructive/10"
                         />
@@ -181,7 +206,7 @@ const OrderSummaryCard = ({ items, deliveryFee, total, onModifyItem, onRemoveIte
                         variant="ghost"
                         size="xs"
                         iconName="Trash2"
-                        onClick={() => handleRemoveClick(item.id, productName)}
+                        onClick={() => onRemoveItem(item.id)}
                         title="Eliminar item"
                         className="text-destructive hover:bg-destructive/10"
                       />
