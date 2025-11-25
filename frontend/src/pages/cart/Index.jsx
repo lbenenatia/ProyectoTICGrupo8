@@ -9,13 +9,20 @@ import OrderTrackingCard from './components/OrderTrackingCard';
 import QuickReorderCard from './components/QuickReorderCard';
 import { useCart } from '../../context/CartContext';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from 'context/AuthContext';
+import { useToast } from '../../context/ToastContext';
+import ConfirmModal from "../../components/ui/ConfirmModal";
 
 const CartPage = () => {
   const [activeTab, setActiveTab] = useState('new-order');
   const [selectedDeliveryOption, setSelectedDeliveryOption] = useState('delivery');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('card');
   const [deliveryAddress, setDeliveryAddress] = useState(null);
+  const [selectedCard, setSelectedCard] = useState(null);
   const navigate = useNavigate();
+
+  const { user } = useAuth();
+  const { showToast } = useToast();
 
   const {
     items: cartItems,
@@ -31,69 +38,76 @@ const CartPage = () => {
     syncOrderFromBackend,
   } = useCart();
 
-  // --- Load saved address ---
+  // ✅ Cargar dirección guardada
   useEffect(() => {
-    const storedAddress = localStorage.getItem('deliveryAddress');
-    if (storedAddress) {
-      setDeliveryAddress(JSON.parse(storedAddress));
-    } else {
-      setDeliveryAddress({
-        label: "Casa",
-        address: "Av. Principal 123",
-        city: "Montevideo",
-        state: "UY",
-        zip: "11000",
-      });
+    if (!user?.email) return;
+
+    const userKey = user.email;
+    const addressesKey = `addresses_${userKey}`;
+    const deliveryKey = `deliveryAddress_${userKey}`;
+
+    const savedSelectionRaw = localStorage.getItem(deliveryKey);
+    if (savedSelectionRaw) {
+      try {
+        const parsed = JSON.parse(savedSelectionRaw);
+        setDeliveryAddress(parsed);
+        return;
+      } catch {
+      }
     }
-  }, []);
+
+    const addressesRaw = localStorage.getItem(addressesKey);
+    if (addressesRaw) {
+      try {
+        const addresses = JSON.parse(addressesRaw);
+        if (Array.isArray(addresses) && addresses.length > 0) {
+          setDeliveryAddress(addresses[addresses.length - 1]);
+          return;
+        }
+      } catch {
+      }
+    }
+
+    setDeliveryAddress(null);
+  }, [user]);
+
+  // ✅ Cargar tarjeta seleccionada
+  useEffect(() => {
+    if (!user?.email) return;
+
+    const userKey = user.email;
+    const cardsKey = `savedCards_${userKey}`;
+    const saved = localStorage.getItem(cardsKey);
+    
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.length > 0) {
+          setSelectedCard(parsed[parsed.length - 1].id);
+        }
+      } catch {
+        setSelectedCard(null);
+      }
+    }
+  }, [user]);
 
   const handleAddressChange = (newAddress) => {
     setDeliveryAddress(newAddress);
-    localStorage.setItem('deliveryAddress', JSON.stringify(newAddress));
-  };
 
-  // --- Saved cards ---
-  const [savedCards, setSavedCards] = useState(() => {
-    try {
-      const raw = localStorage.getItem('savedCards');
-      return raw
-        ? JSON.parse(raw)
-        : [
-            { id: 1, last4: "4242", brand: "Visa", expiry: "12/25" },
-            { id: 2, last4: "5555", brand: "Mastercard", expiry: "08/26" },
-          ];
-    } catch {
-      return [];
-    }
-  });
+    if (!user?.email) return;
+    const userKey = user.email;
+    const deliveryKey = `deliveryAddress_${userKey}`;
 
-  useEffect(() => {
-    localStorage.setItem('savedCards', JSON.stringify(savedCards));
-  }, [savedCards]);
-
-  const handleAddCard = () => {
-    const last4 = prompt("Ingresá los últimos 4 dígitos de la tarjeta:");
-    const brand = prompt("Marca (Visa, Mastercard, etc.):");
-    const expiry = prompt("Vencimiento (MM/AA):");
-
-    if (last4 && brand && expiry) {
-      const newCard = {
-        id: Date.now(),
-        last4,
-        brand,
-        expiry,
-      };
-      setSavedCards((prev) => [...prev, newCard]);
-      setSelectedPaymentMethod('card');
-      alert(`Tarjeta ${brand} **** ${last4} agregada correctamente `);
+    if (newAddress) {
+      localStorage.setItem(deliveryKey, JSON.stringify(newAddress));
+    } else {
+      localStorage.removeItem(deliveryKey);
     }
   };
 
-  const handleSelectCard = (cardId) => {
-    setSelectedPaymentMethod('card');
-    setSavedCards((prev) =>
-      prev.map((c) => ({ ...c, selected: c.id === cardId }))
-    );
+  // ✅ Handler para cuando se selecciona una tarjeta
+  const handleCardSelect = (cardId) => {
+    setSelectedCard(cardId);
   };
 
   useEffect(() => {
@@ -109,19 +123,55 @@ const CartPage = () => {
 
   // --- Totales ---
   const calculateOrderTotals = () => {
-    const deliveryFee = selectedDeliveryOption === 'delivery' ? 2.99 : 0;
-    const tax = subtotal * 0.08;
-    const totalOrder = subtotal + deliveryFee + tax;
-    return { deliveryFee, tax, total: totalOrder };
+    const deliveryFee = selectedDeliveryOption === 'delivery' ? 5.00 : 0;
+    const totalOrder = subtotal + deliveryFee;
+    return { deliveryFee, total: totalOrder };
   };
 
-  const { deliveryFee, tax, total: totalOrder } = calculateOrderTotals();
+  const { deliveryFee, total: totalOrder } = calculateOrderTotals();
+
+  // ✅ VALIDACIÓN COMPLETA ANTES DE HACER EL PEDIDO
+  const validateOrder = () => {
+    // Validar que hay items en el carrito
+    if (cartItems.length === 0) {
+      showToast("⚠️ Tu carrito está vacío");
+      return false;
+    }
+
+    // Validar opción de entrega
+    if (selectedDeliveryOption === 'delivery') {
+      if (!deliveryAddress) {
+        showToast("📍 Seleccioná un domicilio para continuar");
+        return false;
+      }
+    }
+
+    // Validar método de pago
+    if (selectedPaymentMethod === 'card') {
+      if (!selectedCard) {
+        showToast("💳 Seleccioná una tarjeta para continuar");
+        return false;
+      }
+    }
+
+    return true;
+  };
 
   // --- Place order ---
   const handlePlaceOrder = async () => {
+    // Validar antes de hacer el pedido
+    if (!validateOrder()) {
+      return;
+    }
+
     const newOrder = await placeOrder(selectedDeliveryOption);
-    if (newOrder) setActiveTab('tracking');
+
+    if (newOrder) {
+      showToast("Pedido realizado exitosamente");
+      setActiveTab('tracking');
+    }
   };
+
 
   // --- Cancel order (BACKEND REAL) ---
   const handleCancelOrder = async (orderId) => {
@@ -150,7 +200,7 @@ const CartPage = () => {
   };
 
   const handleContactDriver = (driver) => {
-    alert(`Llamando al repartidor ${driver.name} (${driver.vehicle}) 🚗`);
+    showToast(`📞 Llamando a ${driver.name}`);
   };
 
   const handleReorder = (order) => {
@@ -158,12 +208,14 @@ const CartPage = () => {
       addToCart(i.product, { size: i.size, ingredients: i.ingredients }, i.qty)
     );
     setActiveTab('new-order');
+    showToast("✅ Productos agregados al carrito");
   };
 
   const handleModifyAndReorder = (order) => {
     console.log('Modificar antes de volver a pedir:', order);
   };
 
+<<<<<<< HEAD
   const handleRemoveItem = (itemId) => {
     removeFromCart(itemId);
   };
@@ -182,16 +234,103 @@ const CartPage = () => {
       } else {
         navigate(`/product/${itemToEdit.product.id}?edit=true`);
       }
+=======
+  const handleModifyItem = (itemId) => {
+    const itemToEdit = cartItems.find(item => item.id === itemId);
+    if (!itemToEdit) {
+      console.error("❌ Item no encontrado");
+      return;
+    }
+
+    console.log("✏️ Editando item:", itemToEdit);
+
+    if (itemToEdit.customProduct) {
+      const customData = itemToEdit.customProduct.customData;
+      
+      console.log("📦 CustomData del producto:", customData);
+      console.log("🍕 Ingredients array:", customData.ingredients);
+      console.log("🎁 Extras array:", customData.extras);
+
+      const editData = {
+        editMode: true,
+        originalItemId: itemId,
+        productType: customData.type,
+        selectedSize: customData.size,
+        selectedIngredients: customData.ingredients || [],
+        selectedExtras: customData.extras || [],
+        sizeInfo: customData.sizeInfo,
+        basePrice: customData.basePrice,
+        ingredientsPrice: customData.ingredientsPrice,
+        extrasPrice: customData.extrasPrice
+      };
+
+      console.log("💾 Guardando datos para editar:", editData);
+      console.log("📋 selectedIngredients que se guardarán:", editData.selectedIngredients);
+      console.log("📋 selectedExtras que se guardarán:", editData.selectedExtras);
+      
+      localStorage.setItem("editItem", JSON.stringify(editData));
+      navigate('/build-your-own');
+      
+    } else {
+      console.log('✏️ Editando producto regular:', itemToEdit);
+      navigate(`/product/${itemToEdit.product?.id}?edit=true`);
+>>>>>>> a082518b0d583b3019bfc7b09b9cd6b7cbd05347
     }
   };
 
-  const recentOrders = useMemo(() => getLastFiveOrders(), [orders]);
+  const recentOrders = useMemo(() => getLastFiveOrders(), [orders, getLastFiveOrders]);
 
   const tabs = [
     { id: 'new-order', label: 'Nuevo Pedido', icon: 'ShoppingCart' },
     { id: 'tracking', label: 'Seguimiento', icon: 'MapPin' },
     { id: 'reorder', label: 'Volver a Pedir', icon: 'RotateCcw' },
   ];
+
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [itemToRemove, setItemToRemove] = useState(null);
+
+  const handleRemoveItem = (itemId) => {
+    const item = cartItems.find(i => i.id === itemId);
+    if (!item) return;
+
+    setItemToRemove(item);
+    setShowConfirm(true);
+  };
+
+  const handleConfirmRemove = () => {
+    if (itemToRemove) {
+      removeFromCart(itemToRemove.id);
+      setShowConfirm(false);
+      setItemToRemove(null);
+      showToast("🗑️ Producto eliminado del carrito");
+    }
+  };
+
+  const handleCancelRemove = () => {
+    setShowConfirm(false);
+    setItemToRemove(null);
+  };
+
+  const getItemName = (item) => {
+    if (!item) return 'este producto';
+    return item.customProduct?.name || item.name || item.product?.name || 'este producto';
+  };
+
+  // ✅ Calcular si el botón de "Hacer pedido" debe estar deshabilitado
+  const isOrderButtonDisabled = useMemo(() => {
+    if (cartItems.length === 0) return true;
+    if (selectedDeliveryOption === 'delivery' && !deliveryAddress) return true;
+    if (selectedPaymentMethod === 'card' && !selectedCard) return true;
+    return false;
+  }, [cartItems.length, selectedDeliveryOption, deliveryAddress, selectedPaymentMethod, selectedCard]);
+
+  // ✅ Mensaje dinámico para el tooltip del botón
+  const getOrderButtonTooltip = () => {
+    if (cartItems.length === 0) return "Agregá productos al carrito";
+    if (selectedDeliveryOption === 'delivery' && !deliveryAddress) return "Seleccioná un domicilio";
+    if (selectedPaymentMethod === 'card' && !selectedCard) return "Seleccioná una tarjeta";
+    return "";
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -252,9 +391,8 @@ const CartPage = () => {
                   <PaymentMethodCard
                     selectedMethod={selectedPaymentMethod}
                     onMethodChange={setSelectedPaymentMethod}
-                    savedCards={savedCards}
-                    onAddCard={handleAddCard}
-                    onSelectCard={handleSelectCard}
+                    selectedCard={selectedCard}
+                    onCardSelect={handleCardSelect}
                   />
 
                 </div>
@@ -264,23 +402,32 @@ const CartPage = () => {
                     items={cartItems}
                     subtotal={subtotal}
                     deliveryFee={deliveryFee}
-                    tax={tax}
                     total={totalOrder}
                     onModifyItem={handleModifyItem}
                     onRemoveItem={handleRemoveItem}
                   />
 
-                  <Button
-                    variant="default"
-                    size="lg"
-                    fullWidth
-                    iconName="CreditCard"
-                    iconPosition="left"
-                    onClick={handlePlaceOrder}
-                    disabled={cartItems.length === 0}
-                  >
-                    Hacer pedido - ${totalOrder.toFixed(2)}
-                  </Button>
+                  <div className="relative">
+                    <Button
+                      variant="default"
+                      size="lg"
+                      fullWidth
+                      iconName="CreditCard"
+                      iconPosition="left"
+                      onClick={handlePlaceOrder}
+                      disabled={isOrderButtonDisabled}
+                      title={getOrderButtonTooltip()}
+                    >
+                      Hacer pedido - ${totalOrder.toFixed(2)}
+                    </Button>
+                    
+                    {/* ✅ Indicador visual de qué falta */}
+                    {isOrderButtonDisabled && cartItems.length > 0 && (
+                      <div className="mt-2 text-xs text-center text-text-secondary">
+                        {getOrderButtonTooltip()}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -353,6 +500,13 @@ const CartPage = () => {
         </section>
 
       </main>
+      <ConfirmModal
+        open={showConfirm}
+        title="Eliminar del carrito"
+        message={`¿Seguro que deseas eliminar "${getItemName(itemToRemove)}" del carrito?`}
+        onConfirm={handleConfirmRemove}
+        onCancel={handleCancelRemove}
+      />
     </div>
   );
 };

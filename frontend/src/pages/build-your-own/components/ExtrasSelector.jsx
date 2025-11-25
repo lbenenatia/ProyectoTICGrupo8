@@ -40,13 +40,24 @@ const ExtrasSelector = ({
   };
 
   const handleIngredientToggle = (categoryId, ingredientId) => {
+    console.log('🔍 === EXTRAS SELECTION DEBUG START ===');
+    console.log('Category:', categoryId);
+    console.log('Extra ID:', ingredientId);
+    console.log('Type of Extra ID:', typeof ingredientId);
+    console.log('All selectedIngredients:', selectedIngredients);
+    console.log('Current category selection:', selectedIngredients?.[categoryId]);
+    
     const currentCategory = selectedIngredients?.[categoryId] || [];
+    console.log('Current category array:', currentCategory);
+    
     const isSelected = currentCategory?.includes(ingredientId);
+    console.log('Is currently selected:', isSelected);
 
     // Categories that should have single selection (base categories)
     const singleSelectCategories = ['bebida', 'acompañamiento'];
     const categoryLower = categoryId?.toLowerCase();
     const isSingleSelect = singleSelectCategories.includes(categoryLower);
+    console.log('Is single select category:', isSingleSelect);
 
     let newSelection;
     if (isSingleSelect) {
@@ -58,6 +69,10 @@ const ExtrasSelector = ({
         ? currentCategory?.filter(id => id !== ingredientId)
         : [...currentCategory, ingredientId];
     }
+
+    console.log('New selection to send:', newSelection);
+    console.log('Calling onIngredientChange with:', categoryId, newSelection);
+    console.log('🔍 === EXTRAS SELECTION DEBUG END ===');
 
     onIngredientChange(categoryId, newSelection);
   };

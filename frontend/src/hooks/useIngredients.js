@@ -22,7 +22,18 @@ const useIngredients = (productType) => {
         const url = `http://localhost:4028/api/products/by-type/${type}`;
         console.log('URL:', url);
 
-        const response = await fetch(url);
+        const token = localStorage.getItem('authToken');
+        
+        if (!token) {
+          throw new Error('No hay token de autenticación. Por favor inicia sesión.');
+        }
+
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
 
         if (!response.ok) {
           const errorText = await response.text();

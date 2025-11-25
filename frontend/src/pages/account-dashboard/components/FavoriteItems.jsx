@@ -4,33 +4,27 @@ import Image from '../../../components/AppImage';
 import Button from '../../../components/ui/Button';
 
 const FavoriteItems = ({ favorites, onAddToCart, onRemoveFavorite, onCustomize }) => {
-  // Asegurarnos de que favorites siempre sea un array
   const safeFavorites = favorites || [];
 
-  // Función para determinar si es una receta personalizada
   const isCustomRecipe = (item) => {
     return item?.customData !== undefined || item?.isCustom;
   };
 
-  // Función para obtener badges según el tipo de receta
   const getRecipeBadges = (item) => {
     const badges = [];
     
     if (!item) return badges;
     
-    // Badge de personalizado
     if (isCustomRecipe(item)) {
       badges.push({ label: 'Personalizado', color: 'bg-accent/10 text-accent', icon: 'Sparkles' });
     }
     
-    // Badge según el tipo de producto
     if (item?.customData?.type === 'pizza') {
       badges.push({ label: 'Pizza', color: 'bg-primary/10 text-primary', icon: 'Pizza' });
     } else if (item?.customData?.type === 'burger') {
       badges.push({ label: 'Hamburguesa', color: 'bg-warning/10 text-warning', icon: 'Beef' });
     }
     
-    // Badge de tamaño si existe
     if (item?.customData?.sizeInfo?.nameEs) {
       badges.push({ label: item.customData.sizeInfo.nameEs, color: 'bg-success/10 text-success', icon: 'Ruler' });
     }
@@ -65,7 +59,7 @@ const FavoriteItems = ({ favorites, onAddToCart, onRemoveFavorite, onCustomize }
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4">
           {safeFavorites.map((item) => {
-            if (!item) return null; // Skip null items
+            if (!item) return null;
             
             const badges = getRecipeBadges(item);
             const isCustom = isCustomRecipe(item);
@@ -76,21 +70,7 @@ const FavoriteItems = ({ favorites, onAddToCart, onRemoveFavorite, onCustomize }
                 className="border border-border rounded-lg p-4 hover:shadow-warm-sm transition-warm bg-background"
               >
                 {/* Imagen y Header */}
-                <div className="flex items-start space-x-3 mb-3">
-                  <div className="relative flex-shrink-0">
-                    <Image
-                      src={item?.image}
-                      alt={item?.name || 'Receta favorita'}
-                      className="w-16 h-16 rounded-lg object-cover"
-                      fallback={isCustom ? '/images/custom-recipe.jpg' : '/images/default-food.jpg'}
-                    />
-                    {isCustom && (
-                      <div className="absolute -top-1 -right-1 w-6 h-6 bg-accent rounded-full flex items-center justify-center">
-                        <Icon name="Sparkles" size={12} className="text-white" />
-                      </div>
-                    )}
-                  </div>
-                  
+                <div className="flex items-start space-x-3 mb-3">                  
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between">
                       <div className="min-w-0 flex-1">

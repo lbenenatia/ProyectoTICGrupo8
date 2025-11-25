@@ -7,32 +7,59 @@ const OrderSummary = ({
   productType,
   selectedSize,
   selectedIngredients,
+  selectedExtras,
   ingredientsData,
+  extrasData,
+  onAddToCart
 }) => {
   const { addToCart, addToFavorites } = useCart();
 
-  // 🔹 Crear lista con los ingredientes seleccionados y sus datos reales
-  const selectedItems = useMemo(() => {
-    const items = [];
-    if (!ingredientsData || !selectedIngredients) return items;
+const selectedItems = useMemo(() => {
+  const items = [];
+  if (!ingredientsData || !selectedIngredients) return items;
 
-    Object.entries(selectedIngredients).forEach(([category, ids]) => {
-      const categoryIngredients = ingredientsData[category] || [];
-      ids.forEach((id) => {
-        const found = categoryIngredients.find((ing) => ing.id === id);
+  Object.entries(selectedIngredients).forEach(([category, ids]) => {
+    const idArray = Array.isArray(ids) ? ids : [ids].filter(Boolean);
+    
+    const categoryIngredients = ingredientsData[category] || [];
+    idArray.forEach((id) => {
+      const found = categoryIngredients.find((ing) => ing.id === id);
+      if (found) {
+        items.push({
+          category,
+          name: found.name,
+          price: found.price || 0,
+          type: 'ingredient'
+        });
+      }
+    });
+  });
+  return items;
+}, [selectedIngredients, ingredientsData]);
+
+  const selectedExtrasItems = useMemo(() => {
+    const items = [];
+    if (!extrasData || !selectedExtras) return items;
+
+    Object.entries(selectedExtras).forEach(([category, ids]) => {
+      const idArray = Array.isArray(ids) ? ids : [ids].filter(Boolean);
+      
+      const categoryExtras = extrasData[category] || [];
+      idArray.forEach((id) => {
+        const found = categoryExtras.find((extra) => extra.id === id);
         if (found) {
           items.push({
             category,
             name: found.name,
             price: found.price || 0,
+            type: 'extra'
           });
         }
       });
     });
     return items;
-  }, [selectedIngredients, ingredientsData]);
+  }, [selectedExtras, extrasData]);
 
-  // 🔹 Tamaños con multiplicadores
   const sizeMap =
     productType === 'pizza'
       ? {
@@ -48,12 +75,11 @@ const OrderSummary = ({
 
   const sizeInfo = sizeMap[selectedSize] || null;
 
-  // Cálculo de precios
   const basePrice = productType === 'pizza' ? 12 : 9;
-  const extrasPrice = selectedItems.reduce((sum, item) => sum + (item.price || 0), 0);
-  const total = basePrice * (sizeInfo?.multiplier || 1) + extrasPrice;
+  const ingredientsPrice = selectedItems.reduce((sum, item) => sum + (item.price || 0), 0);
+  const extrasPrice = selectedExtrasItems.reduce((sum, item) => sum + (item.price || 0), 0);
+  const total = basePrice * (sizeInfo?.multiplier || 1) + ingredientsPrice + extrasPrice;
 
-  // Validar ingredientes obligatorios
   const hasRequiredIngredients = useMemo(() => {
     if (productType === 'pizza') {
       const masaOk = selectedIngredients?.masa?.length > 0 || selectedIngredients?.base?.length > 0;
@@ -73,34 +99,25 @@ const OrderSummary = ({
       ? 'Seleccioná al menos una masa y una salsa.'
       : 'Seleccioná al menos un pan y una carne.';
 
-  // Función para agregar al carrito
   const handleAddToCart = () => {
-    const productName = productType === 'pizza' ? 'Pizza' : 'Hamburguesa';
-    const sizeName = sizeInfo?.nameEs || '';
-    
-    const ingredientsList = selectedItems.map(item => item.name).join(', ');
-    
-    const item = {
-      id: `custom-${Date.now()}`,
-      name: `${productName} ${sizeName}`,
-      description: ingredientsList || 'Sin ingredientes adicionales',
-      price: total,
-      image: productType === 'pizza' ? '/images/custom-pizza.jpg' : '/images/custom-burger.jpg',
-      quantity: 1,
-      customData: {
-        type: productType,
-        size: selectedSize,
-        sizeInfo: sizeInfo,
-        ingredients: selectedItems,
-        basePrice: basePrice * (sizeInfo?.multiplier || 1),
-        extrasPrice: extrasPrice,
-      }
+    if (onAddToCart) {
+      const productData = {
+        productType,
+        selectedSize,
+        selectedIngredients,
+        selectedExtras,
+        ingredientsData,
+        extrasData,
+        sizeInfo,
+        basePrice,
+        ingredientsPrice,
+        extrasPrice,
+        total
+      };
+      onAddToCart(productData);
     };
-
-    addToCart(item);
   };
 
-  // Función para agregar a favoritos
   const handleAddToFavorites = () => {
     if (!hasRequiredIngredients) {
       alert('❌ ' + missingText);
@@ -114,15 +131,17 @@ const OrderSummary = ({
       name: `${productName} ${sizeName} Personalizada`,
       productType: productType,
       price: total,
-      image: productType === 'pizza' ? '/images/custom-pizza.jpg' : '/images/custom-burger.jpg',
       customData: {
         type: productType,
         size: selectedSize,
         sizeInfo: sizeInfo,
         ingredients: selectedItems,
+        extras: selectedExtrasItems, // ← NUEVO
         basePrice: basePrice * (sizeInfo?.multiplier || 1),
-        extrasPrice: extrasPrice,
-        selectedIngredients: selectedIngredients, // Guardamos la selección para poder recrearla
+        ingredientsPrice: ingredientsPrice,
+        extrasPrice: extrasPrice, // ← NUEVO
+        selectedIngredients: selectedIngredients,
+        selectedExtras: selectedExtras, // ← NUEVO
       }
     };
 
@@ -159,9 +178,9 @@ const OrderSummary = ({
       </div>
 
       {/* Ingredientes */}
-      <div className="mb-6">
+      <div className="mb-4">
         <h4 className="font-medium text-text-primary mb-3">Ingredientes</h4>
-        <div className="space-y-2 max-h-48 overflow-y-auto">
+        <div className="space-y-2 max-h-32 overflow-y-auto">
           {selectedItems.length > 0 ? (
             selectedItems.map((item, index) => (
               <div key={index} className="flex justify-between items-center text-sm">
@@ -177,16 +196,45 @@ const OrderSummary = ({
         </div>
       </div>
 
+      <div className="mb-4">
+        <h4 className="font-medium text-text-primary mb-3">Extras</h4>
+        <div className="space-y-2 max-h-32 overflow-y-auto">
+          {selectedExtrasItems.length > 0 ? (
+            selectedExtrasItems.map((item, index) => (
+              <div key={index} className="flex justify-between items-center text-sm">
+                <span className="text-text-secondary capitalize">{item.name}</span>
+                <span className="text-text-primary font-medium">
+                  {item.price === 0 ? 'Gratis' : `+$${item.price.toFixed(2)}`}
+                </span>
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-text-secondary italic">Sin extras seleccionados</p>
+          )}
+        </div>
+      </div>
+
       {/* Precio total */}
       <div className="mb-6 p-4 border border-border rounded-lg">
         <div className="flex justify-between items-center mb-2">
           <span className="text-text-secondary">Precio base ({sizeInfo?.nameEs || '*'})</span>
           <span className="text-text-primary">${(basePrice * (sizeInfo?.multiplier || 1)).toFixed(2)}</span>
         </div>
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-text-secondary">Extras</span>
-          <span className="text-text-primary">+${extrasPrice.toFixed(2)}</span>
-        </div>
+        
+        {ingredientsPrice > 0 && (
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-text-secondary">Ingredientes</span>
+            <span className="text-text-primary">+${ingredientsPrice.toFixed(2)}</span>
+          </div>
+        )}
+        
+        {extrasPrice > 0 && (
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-text-secondary">Extras</span>
+            <span className="text-text-primary">+${extrasPrice.toFixed(2)}</span>
+          </div>
+        )}
+        
         <div className="border-t border-border pt-2 mt-2">
           <div className="flex justify-between items-center">
             <span className="font-semibold text-text-primary">Total</span>

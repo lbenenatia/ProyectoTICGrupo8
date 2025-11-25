@@ -13,33 +13,32 @@ import LoginPage from './pages/login/Index';
 import ForgotRequest from './pages/forgot-password/Request';
 import ForgotReset from './pages/forgot-password/Reset';
 import { AuthProvider } from "context/AuthContext";
+import { CartProvider } from "context/CartContext";
 import AdminRoute from "./components/AdminRoute";
 import AdminPage from "./pages/admin/Index";
 import Unauthorized from './pages/unauthorized/Index';
 
 const Routes = () => {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <ErrorBoundary>
-          <ScrollToTop />
-          <RouterRoutes>
-            <Route path="/" element={<Homepage />} />
-            <Route path="/account-dashboard" element={<AccountDashboard />} />
-            <Route path="/build-your-own" element={<BuildYourOwn />} />
-            <Route path="/cart" element={<RequireAuth><CartPage /></RequireAuth>} />
-            <Route path="/homepage" element={<Homepage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/forgot-password" element={<ForgotRequest />} />
-            <Route path="/forgot-password/reset" element={<ForgotReset />} />
-            <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
-            <Route path="/unauthorized" element={<Unauthorized />} />
-            <Route path="*" element={<NotFound />} />
-          </RouterRoutes>
-        </ErrorBoundary>
-      </AuthProvider>
-    </BrowserRouter>
+        <BrowserRouter>
+          <ErrorBoundary>
+            <ScrollToTop />
+            <RouterRoutes>
+              <Route path="/" element={<Homepage />} />
+              <Route path="/account-dashboard" element={<AccountDashboard />} />
+              <Route path="/build-your-own" element={<BuildYourOwn />} />
+              <Route path="/cart" element={<RequireAuth><CartPage /></RequireAuth>} />
+              <Route path="/homepage" element={<Homepage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/forgot-password" element={<ForgotRequest />} />
+              <Route path="/forgot-password/reset" element={<ForgotReset />} />
+              <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
+              <Route path="/unauthorized" element={<Unauthorized />} />
+              <Route path="*" element={<NotFound />} />
+            </RouterRoutes>
+          </ErrorBoundary>
+        </BrowserRouter>
   );
 };
 

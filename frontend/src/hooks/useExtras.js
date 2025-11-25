@@ -16,13 +16,24 @@ const useExtras = (productType) => {
         setLoading(true);
         setError(null);
 
+        const token = localStorage.getItem('authToken');
+        
+        if (!token) {
+          throw new Error('No hay token de autenticación. Por favor inicia sesión.');
+        }
+
+        const headers = {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        };
+
         console.log('Fetching extras for type:', productType);
 
         if (productType === 'pizza') {
           const url = `http://localhost:4028/api/products/by-type/BOTH`;
           console.log('URL:', url);
 
-          const response = await fetch(url);
+          const response = await fetch(url, { headers });
           if (!response.ok) throw new Error(`Error ${response.status}`);
 
           const data = await response.json();
@@ -43,8 +54,8 @@ const useExtras = (productType) => {
         
         else if (productType === 'burger') {
           const [bothResponse, burgerResponse] = await Promise.all([
-            fetch('http://localhost:4028/api/products/by-type/BOTH'),
-            fetch('http://localhost:4028/api/products/by-type/BURGER')
+            fetch('http://localhost:4028/api/products/by-type/BOTH', { headers }),
+            fetch('http://localhost:4028/api/products/by-type/BURGER', { headers })
           ]);
 
           if (!bothResponse.ok || !burgerResponse.ok) {

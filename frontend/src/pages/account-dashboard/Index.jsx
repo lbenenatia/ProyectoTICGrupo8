@@ -2,25 +2,30 @@ import React, { useState, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from 'context/AuthContext';
 import { useCart } from 'context/CartContext';
+import { useToast } from '../../context/ToastContext';
 import Header from '../../components/ui/Header';
 import ProfileCard from './components/ProfileCard';
 import RecentOrders from './components/RecentOrders';
 import FavoriteItems from './components/FavoriteItems';
 import AddressesCard from './components/AddressesCard';
 import CardsInfo from './components/CardsInfo';
-import AddressModal from './components/AddressModal';
-import CardModal from './components/CardModal';
+import AddressModal from '../../components/ui/AddressModal';
+import CardModal from '../../components/ui/CardModal';
 import Icon from '../../components/AppIcon';
 
 const AccountDashboard = () => {
   const { user } = useAuth();
   const { favorites, removeFromFavorites, addToCart } = useCart();
+  const { showToast } = useToast();
   const location = useLocation();
 
   const [activeTab, setActiveTab] = useState('overview');
+<<<<<<< HEAD
   const [addresses, setAddresses] = useState([]);
   const [cards, setCards] = useState([]);
 
+=======
+>>>>>>> a082518b0d583b3019bfc7b09b9cd6b7cbd05347
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [isCardModalOpen, setIsCardModalOpen] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState(null);
@@ -34,6 +39,7 @@ const AccountDashboard = () => {
     }
   }, [location.state]);
 
+<<<<<<< HEAD
   // Cargar datos del usuario (direcciones y tarjetas)
   useEffect(() => {
     const fetchUserData = async () => {
@@ -63,6 +69,8 @@ const AccountDashboard = () => {
       .catch(err => console.error("Error cargando pedidos del usuario:", err));
   }, [user]);
 
+=======
+>>>>>>> a082518b0d583b3019bfc7b09b9cd6b7cbd05347
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
@@ -101,32 +109,151 @@ const AccountDashboard = () => {
     };
 
     addToCart(cartItem);
+    showToast("✅ Producto agregado al carrito");
   };
 
   const handleRemoveFavorite = (itemId) => {
     if (window.confirm('¿Estás seguro de que querés eliminar este favorito?')) {
       removeFromFavorites(itemId);
+      showToast("🗑️ Favorito eliminado");
     }
   };
 
-  const handleCustomizeItem = (itemId) => {
-    const favorite = favorites.find(fav => fav.id === itemId);
-    if (!favorite) return;
+  // ✅ Helpers para localStorage
+  const getAddressesKey = () => {
+    const email = user?.email || "guest";
+    return `addresses_${email}`;
+  };
 
-    localStorage.setItem("editingFavorite", JSON.stringify({
-      ...favorite,
-      editMode: true
-    }));
+<<<<<<< HEAD
+=======
+  const getCardsKey = () => {
+    const email = user?.email || "guest";
+    return `savedCards_${email}`;
+  };
 
-    if (favorite.customData?.type === 'pizza') {
-      window.location.href = '/customize?product=pizza&edit=true';
-    } else if (favorite.customData?.type === 'burger') {
-      window.location.href = '/customize?product=burger&edit=true';
+  // ✅ ADDRESS HANDLERS
+  const handleAddAddress = () => {
+    setSelectedAddress(null);
+    setIsAddressModalOpen(true);
+  };
+
+  const handleEditAddress = (address) => {
+    setSelectedAddress(address);
+    setIsAddressModalOpen(true);
+  };
+
+  const handleSaveAddress = (addressData) => {
+    const addressesKey = getAddressesKey();
+    const saved = localStorage.getItem(addressesKey);
+    let addresses = [];
+    
+    try {
+      addresses = saved ? JSON.parse(saved) : [];
+    } catch {
+      addresses = [];
+    }
+
+    if (selectedAddress) {
+      // ✅ Actualizar dirección existente
+      const updated = addresses.map(a => 
+        a.id === selectedAddress.id ? { ...addressData, id: selectedAddress.id } : a
+      );
+      localStorage.setItem(addressesKey, JSON.stringify(updated));
+      showToast("✅ Dirección actualizada correctamente");
     } else {
-      window.location.href = '/customize';
+      // ✅ Agregar nueva dirección
+      const newAddress = { ...addressData, id: Date.now() };
+      const updated = [...addresses, newAddress];
+      localStorage.setItem(addressesKey, JSON.stringify(updated));
+      showToast("✅ Dirección guardada correctamente");
     }
+
+    // ✅ Cerrar modal
+    setIsAddressModalOpen(false);
+    setSelectedAddress(null);
+    
+    // ✅ Trigger storage event para sincronizar
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: addressesKey,
+      newValue: localStorage.getItem(addressesKey)
+    }));
   };
 
+  // ✅ CARD HANDLERS
+  const handleAddCard = () => {
+    setSelectedCard(null);
+    setIsCardModalOpen(true);
+  };
+
+  const handleEditCard = (card) => {
+    setSelectedCard(card);
+    setIsCardModalOpen(true);
+  };
+
+  const handleSaveCard = (cardData) => {
+    const cardsKey = getCardsKey();
+    const saved = localStorage.getItem(cardsKey);
+    let cards = [];
+    
+    try {
+      cards = saved ? JSON.parse(saved) : [];
+    } catch {
+      cards = [];
+    }
+
+    if (selectedCard) {
+      // ✅ Actualizar tarjeta existente
+      const updated = cards.map(c => 
+        c.id === selectedCard.id 
+          ? { 
+              ...cardData, 
+              id: selectedCard.id,
+              // Mantener el número si no se proporcionó uno nuevo
+              number: cardData.number || cardData.cardNumber || selectedCard.number || selectedCard.cardNumber,
+              cardNumber: cardData.cardNumber || cardData.number || selectedCard.cardNumber || selectedCard.number,
+              holder: cardData.holder || cardData.cardHolder,
+              cardHolder: cardData.cardHolder || cardData.holder,
+              expiry: cardData.expiry || cardData.cardExpiry,
+              cardExpiry: cardData.cardExpiry || cardData.expiry,
+              cvv: cardData.cvv || cardData.cardCVV,
+              cardCVV: cardData.cardCVV || cardData.cvv
+            } 
+          : c
+      );
+      localStorage.setItem(cardsKey, JSON.stringify(updated));
+      showToast("✅ Tarjeta actualizada correctamente");
+    } else {
+      // ✅ Agregar nueva tarjeta
+      const newCard = { 
+        ...cardData, 
+        id: Date.now(),
+        number: cardData.cardNumber || cardData.number,
+        cardNumber: cardData.cardNumber || cardData.number,
+        holder: cardData.cardHolder || cardData.holder,
+        cardHolder: cardData.cardHolder || cardData.holder,
+        expiry: cardData.cardExpiry || cardData.expiry,
+        cardExpiry: cardData.cardExpiry || cardData.expiry,
+        cvv: cardData.cardCVV || cardData.cvv,
+        cardCVV: cardData.cardCVV || cardData.cvv
+      };
+      const updated = [...cards, newCard];
+      localStorage.setItem(cardsKey, JSON.stringify(updated));
+      showToast("✅ Tarjeta guardada correctamente");
+    }
+
+    // ✅ Cerrar modal
+    setIsCardModalOpen(false);
+    setSelectedCard(null);
+    
+    // ✅ Trigger storage event para sincronizar
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: cardsKey,
+      newValue: localStorage.getItem(cardsKey)
+    }));
+  };
+
+>>>>>>> a082518b0d583b3019bfc7b09b9cd6b7cbd05347
   const renderTabContent = () => {
     switch (activeTab) {
       case 'overview':
@@ -139,7 +266,6 @@ const AccountDashboard = () => {
                 favorites={favorites}
                 onAddToCart={handleAddToCart}
                 onRemoveFavorite={handleRemoveFavorite}
-                onCustomize={handleCustomizeItem}
               />
             </div>
           </div>
@@ -149,6 +275,7 @@ const AccountDashboard = () => {
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <AddressesCard
+<<<<<<< HEAD
                 addresses={addresses}
                 onEditAddress={setSelectedAddress}
                 onAddAddress={() => setIsAddressModalOpen(true)}
@@ -159,6 +286,14 @@ const AccountDashboard = () => {
                 onEditCard={setSelectedCard}
                 onAddCard={() => setIsCardModalOpen(true)}
                 onDeleteCard={(id) => setCards(cards.filter(c => c.id !== id))}
+=======
+                onEditAddress={handleEditAddress}
+                onAddAddress={handleAddAddress}
+              />
+              <CardsInfo
+                onEditCard={handleEditCard}
+                onAddCard={handleAddCard}
+>>>>>>> a082518b0d583b3019bfc7b09b9cd6b7cbd05347
               />
             </div>
           </div>
@@ -171,11 +306,25 @@ const AccountDashboard = () => {
             favorites={favorites}
             onAddToCart={handleAddToCart}
             onRemoveFavorite={handleRemoveFavorite}
-            onCustomize={handleCustomizeItem}
           />
         );
       default:
+<<<<<<< HEAD
         return null;
+=======
+        return (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <RecentOrders />
+              <FavoriteItems
+                favorites={favorites}
+                onAddToCart={handleAddToCart}
+                onRemoveFavorite={handleRemoveFavorite}
+              />
+            </div>
+          </div>
+        );
+>>>>>>> a082518b0d583b3019bfc7b09b9cd6b7cbd05347
     }
   };
 
@@ -215,18 +364,32 @@ const AccountDashboard = () => {
 
       <AddressModal
         isOpen={isAddressModalOpen}
+<<<<<<< HEAD
         onClose={() => setIsAddressModalOpen(false)}
         onSave={() => {}}
+=======
+        onClose={() => {
+          setIsAddressModalOpen(false);
+          setSelectedAddress(null);
+        }}
+        onSave={handleSaveAddress}
+>>>>>>> a082518b0d583b3019bfc7b09b9cd6b7cbd05347
         address={selectedAddress}
-        userEmail={user?.email}
       />
 
       <CardModal
         isOpen={isCardModalOpen}
+<<<<<<< HEAD
         onClose={() => setIsCardModalOpen(false)}
         onSave={() => {}}
+=======
+        onClose={() => {
+          setIsCardModalOpen(false);
+          setSelectedCard(null);
+        }}
+        onSave={handleSaveCard}
+>>>>>>> a082518b0d583b3019bfc7b09b9cd6b7cbd05347
         card={selectedCard}
-        userEmail={user?.email}
       />
     </div>
   );

@@ -1,136 +1,148 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
-
-
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { useAuth } from "../context/AuthContext";
 
 const CartContext = createContext(null);
 
+function safeParseArray(raw) {
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function cleanCartItems(items) {
+  if (!Array.isArray(items)) return [];
+  return items
+    .filter((i) => i && (i.product || i.customProduct))
+    .map((i) => ({
+      ...i,
+      qty: typeof i.qty === "number" && i.qty > 0 ? i.qty : 1,
+    }));
+}
+
 export const CartProvider = ({ children }) => {
-  
-  // --- CART STATE ---
-  const [items, setItems] = useState(() => {
-    try {
-      const raw = localStorage.getItem("cart");
-      const parsed = raw ? JSON.parse(raw) : [];
-      console.log(' CartContext - Items cargados desde localStorage:', parsed);
-      return parsed;
-    } catch (error) {
-      console.error('Error cargando carrito:', error);
-      return [];
-    }
-  });
+  const { user } = useAuth();
+  const userKey = user?.email || "guest";
 
-  // --- ORDERS STATE ---
-  const [orders, setOrders] = useState(() => {
-    try {
-      const raw = localStorage.getItem("orders");
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [items, setItems] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [favorites, setFavorites] = useState([]);
 
-  // --- FAVORITES STATE ---
-  const [favorites, setFavorites] = useState(() => {
-    try {
-      const raw = localStorage.getItem("favorites");
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  // --- SYNC TO LOCALSTORAGE ---
+  // -------------------------------------------------------------
+  // Load localStorage when user changes
+  // -------------------------------------------------------------
   useEffect(() => {
-    try {
-      localStorage.setItem("cart", JSON.stringify(items));
-      console.log(' Guardando carrito:', items);
-    } catch (error) {
-      console.error('Error guardando carrito:', error);
+    if (!user) {
+      setItems([]);
+      setOrders([]);
+      setFavorites([]);
+
+      localStorage.removeItem("cart_guest");
+      localStorage.removeItem("orders_guest");
+      localStorage.removeItem("favorites_guest");
+      return;
     }
-  }, [items]);
+
+    const cartRaw = localStorage.getItem(`cart_${userKey}`);
+    const ordersRaw = localStorage.getItem(`orders_${userKey}`);
+    const favsRaw = localStorage.getItem(`favorites_${userKey}`);
+
+    setItems(cleanCartItems(safeParseArray(cartRaw)));
+    setOrders(safeParseArray(ordersRaw));
+    setFavorites(safeParseArray(favsRaw));
+  }, [userKey, user]);
+
+  // -------------------------------------------------------------
+  // Persist changes
+  // -------------------------------------------------------------
+  useEffect(() => {
+    if (!user) return;
+    localStorage.setItem(`cart_${userKey}`, JSON.stringify(items));
+  }, [items, userKey, user]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem("orders", JSON.stringify(orders));
-    } catch {}
-  }, [orders]);
+    if (!user) return;
+    localStorage.setItem(`orders_${userKey}`, JSON.stringify(orders));
+  }, [orders, userKey, user]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem("favorites", JSON.stringify(favorites));
-    } catch (error) {
-      console.error('Error guardando favoritos:', error);
-    }
-  }, [favorites]);
+    if (!user) return;
+    localStorage.setItem(`favorites_${userKey}`, JSON.stringify(favorites));
+  }, [favorites, userKey, user]);
 
-  // --- CART FUNCTIONS ---
+  // -------------------------------------------------------------
+  // CART FUNCTIONS
+  // -------------------------------------------------------------
   const addToCart = (product, options = {}, qty = 1) => {
-    console.log('addToCart llamado con:', { product, options, qty });
-    
-    // Detectar si es un producto personalizado (tiene customData)
     const isCustomProduct = product?.customData !== undefined;
-    
+
     setItems((prev) => {
-      // Para productos personalizados, siempre crear nuevo item (son únicos)
+      const cleanedPrev = cleanCartItems(prev);
+
       if (isCustomProduct) {
         const newItem = {
           id: product.id || `custom-${Date.now()}`,
-          product: null, // No hay producto base
-          customProduct: product, // Guardamos el producto personalizado completo
-          qty: qty,
+          product: null,
+          customProduct: product,
+          qty,
         };
-        
-        console.log(' Nuevo producto personalizado agregado:', newItem);
-        return [...prev, newItem];
+        return [...cleanedPrev, newItem];
       }
-      
-      // Para productos normales del menú (lógica original)
+
       const { size, customizations, ingredients = [] } = options;
 
-      const idx = prev.findIndex(
+      const idx = cleanedPrev.findIndex(
         (i) =>
           i.product?.id === product?.id &&
-          JSON.stringify(i.ingredients || []) === JSON.stringify(ingredients || []) &&
+          JSON.stringify(i.ingredients || []) ===
+            JSON.stringify(ingredients || []) &&
           i.size === size
       );
 
       if (idx >= 0) {
-        const next = [...prev];
+        const next = [...cleanedPrev];
         next[idx].qty = (next[idx].qty || 1) + qty;
-        console.log('Item actualizado:', next[idx]);
         return next;
       }
 
-      const newItem = {
-        id: Date.now(),
-        product,
-        size,
-        customizations,
-        ingredients,
-        qty,
-      };
-      
-      console.log(' Nuevo item normal agregado:', newItem);
-      return [...prev, newItem];
+      return [
+        ...cleanedPrev,
+        {
+          id: Date.now(),
+          product,
+          size,
+          customizations,
+          ingredients,
+          qty,
+        },
+      ];
     });
   };
 
   const updateQty = (id, qty) =>
     setItems((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, qty: Math.max(1, qty) } : i))
+      cleanCartItems(prev).map((i) =>
+        i.id === id ? { ...i, qty: Math.max(1, qty) } : i
+      )
     );
 
   const removeFromCart = (id) => {
-    console.log('Eliminando item:', id);
-    setItems((prev) => prev.filter((i) => i.id !== id));
+    setItems((prev) => cleanCartItems(prev).filter((i) => i.id !== id));
   };
 
-  const clearCart = () => {
-    console.log(' Limpiando carrito');
-    setItems([]);
-  };
+  const clearCart = () => setItems([]);
 
-  // --- FAVORITES FUNCTIONS ---
+  // -------------------------------------------------------------
+  // FAVORITES
+  // -------------------------------------------------------------
   const addToFavorites = (recipe) => {
     const newFavorite = {
       id: `FAV-${Date.now()}`,
@@ -139,21 +151,20 @@ export const CartProvider = ({ children }) => {
     };
 
     setFavorites((prev) => {
-      // Evitar duplicados basados en nombre e ingredientes
       const isDuplicate = prev.some(
         (fav) =>
           fav.name === recipe.name &&
-          JSON.stringify(fav.customData?.ingredients) === JSON.stringify(recipe.customData?.ingredients)
+          JSON.stringify(fav.customData?.ingredients) ===
+            JSON.stringify(recipe.customData?.ingredients)
       );
 
       if (isDuplicate) {
-        alert(' Esta receta ya está en tus favoritos');
+        alert("Esta receta ya está en tus favoritos");
         return prev;
       }
 
-      const updated = [...prev, newFavorite];
-      alert('Receta agregada a favoritos');
-      return updated;
+      alert("Receta agregada a favoritos");
+      return [...prev, newFavorite];
     });
   };
 
@@ -161,200 +172,141 @@ export const CartProvider = ({ children }) => {
     setFavorites((prev) => prev.filter((fav) => fav.id !== favoriteId));
   };
 
-  const clearFavorites = () => {
-    setFavorites([]);
-  };
+  const clearFavorites = () => setFavorites([]);
 
-  // --- PLACE ORDER ---
-const placeOrder = async () => {
-  if (items.length === 0) return null;
+  // -------------------------------------------------------------
+  // PLACE ORDER (BACKEND REAL)
+  // -------------------------------------------------------------
+  const placeOrder = async () => {
+    if (items.length === 0) return null;
 
-  // --- helpers para mapear a enums del backend ---
-const mapCreationType = (type) => {
-  if (!type) return "PIZZA";
+    const mapCreationType = (type) => {
+      if (!type) return "PIZZA";
+      const t = type.toString().toUpperCase();
+      if (t.includes("PIZZA")) return "PIZZA";
+      if (t.includes("BURGER")) return "BURGER";
+      if (t.includes("BOTH") || t.includes("COMBO")) return "BOTH";
+      return "PIZZA";
+    };
 
-  const t = type.toString().toUpperCase();
+    const mapPaymentMethod = () => "TARJETA";
 
-  if (t.includes("PIZZA")) return "PIZZA";
-  if (t.includes("BURGER")) return "BURGER";
-
-  if (t.includes("BOTH") || t.includes("COMBO")) return "BOTH";
-
-  return "PIZZA"; // fallback seguro
-};
-
-
- 
-  const mapPaymentMethod = () => {
-    return "TARJETA"; 
-  };
-
-  try {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (!user || !user.email) {
-      alert("Tenés que iniciar sesión antes de hacer un pedido.");
-      return null;
-    }
-
-    // 1) Crear pedido
-    const orderRes = await fetch(
-      `http://localhost:4028/api/orders/create/${user.email}`,
-      { method: "POST" }
-    );
-
-    if (!orderRes.ok) {
-      console.error("Error creando pedido (create):", orderRes.status);
-      alert("No se pudo crear el pedido.");
-      return null;
-    }
-
-    const order = await orderRes.json();
-
-    // 2) Agregar creaciones
-    for (const item of items) {
-      let productIds = [];
-
-      if (item.customProduct?.customData?.ingredients) {
-        productIds = item.customProduct.customData.ingredients
-          .map((i) => i.id)
-          .filter((id) => id != null);
+    try {
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (!user || !user.email) {
+        alert("Tenés que iniciar sesión antes de hacer un pedido.");
+        return null;
       }
 
-      else if (item.ingredients) {
-        productIds = item.ingredients
-          .map((i) => i.id)
-          .filter((id) => id != null);
-      }
+      // 1) Crear pedido
+      const orderRes = await fetch(
+        `http://localhost:4028/api/orders/create/${user.email}`,
+        { method: "POST" }
+      );
 
-      let rawType;
+      if (!orderRes.ok) return null;
 
-      // Si es producto personalizado
-      if (item.customProduct) {
-        rawType = item.customProduct.type?.toUpperCase() || "PIZZA";
-      } else {
-        // Producto del menú
-        rawType = (item.product?.type || item.product?.category || "PIZZA").toUpperCase();
-      }
+      const order = await orderRes.json();
 
-      const typeEnum = mapCreationType(rawType);
+      // 2) Para cada producto → agregar creación
+      for (const item of items) {
+        let productIds = [];
 
-      const size = item.size || "MEDIUM";
-
-      const creationRes = await fetch(
-        `http://localhost:4028/api/orders/${order.id}/add-creation?type=${typeEnum}&size=${size}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(productIds),
+        if (item.customProduct?.customData?.ingredients) {
+          productIds = item.customProduct.customData.ingredients.map((i) => i.id);
+        } else if (item.ingredients) {
+          productIds = item.ingredients.map((i) => i.id);
         }
-      );
 
-      if (!creationRes.ok) {
-        console.error(
-          "Error creando creación (add-creation):",
-          creationRes.status
+        const type = item.customProduct
+          ? item.customProduct.type?.toUpperCase()
+          : item.product?.type || "PIZZA";
+
+        const size = item.size || "MEDIUM";
+
+        await fetch(
+          `http://localhost:4028/api/orders/${order.id}/add-creation?type=${mapCreationType(
+            type
+          )}&size=${size}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(productIds),
+          }
         );
-        alert("Hubo un error al agregar una creación al pedido.");
-        // si querés, acá podrías hacer un `return null;`
       }
-    }
 
-    // 3) Generar ticket
-    const paymentEnum = mapPaymentMethod();
-
-    const ticketRes = await fetch(
-      `http://localhost:4028/api/orders/${order.id}/generate-ticket?method=${paymentEnum}`,
-      { method: "POST" }
-    );
-
-    if (!ticketRes.ok) {
-      console.error(
-        "Error generando ticket (generate-ticket):",
-        ticketRes.status
+      // 3) Generar ticket
+      await fetch(
+        `http://localhost:4028/api/orders/${order.id}/generate-ticket?method=${mapPaymentMethod()}`,
+        { method: "POST" }
       );
-      alert("Hubo un error generando el ticket.");
+
+      // 4) Guardar local + total real
+      setOrders((prev) => [...prev, { ...order, total }]);
+      clearCart();
+
+      return order;
+    } catch (err) {
+      console.error("Error creando pedido:", err);
       return null;
     }
-
-    const ticket = await ticketRes.json();
-    console.log("Ticket generado:", ticket);
-
-    // 4) Guardar pedido local y vaciar carrito
-    setOrders((prev) => [...prev, order]);
-    clearCart();
-
-    return order;
-  } catch (err) {
-    console.error("Error creando pedido:", err);
-    alert("Hubo un error creando el pedido.");
-    return null;
-  }
-};
-
-
-
-  // --- GET LAST FIVE ORDERS ---
-  const getLastFiveOrders = () => {
-    return [...orders].slice(-5).reverse();
   };
 
-  
+  // -------------------------------------------------------------
+  // GET LAST FIVE ORDERS
+  // -------------------------------------------------------------
+  const getLastFiveOrders = () => {
+    const arr = Array.isArray(orders) ? orders : [];
+    return [...arr].slice(-5).reverse();
+  };
 
-  // --- CART CALCULATIONS ---
-  const { cartCount, subtotal, total } = useMemo(() => {
-    console.log(' Calculando totales para items:', items);
-    
-    const cartCount = items.reduce((n, i) => n + (i.qty || 1), 0);
-    
-    const subtotal = items.reduce((sum, i) => {
-      const qty = i.qty || 1;
-      
-      // Para productos personalizados
-      if (i.customProduct) {
-        const price = i.customProduct?.price || 0;
-        console.log(`  Producto personalizado: ${i.customProduct?.name}, Precio: ${price}, Qty: ${qty}`);
-        return sum + (price * qty);
-      }
-      
-      // Para productos normales
-      const price = i.product?.price || 0;
-      console.log(`  Producto normal: ${i.product?.name}, Precio: ${price}, Qty: ${qty}`);
-      return sum + (price * qty);
-    }, 0);
-    
-    const total = subtotal;
-    
-    console.log(' Totales calculados:', { cartCount, subtotal, total });
-    
-    return { cartCount, subtotal, total };
-  }, [items]);
-    // --- SYNC ORDER FROM BACKEND ---
-  
+  // -------------------------------------------------------------
+  // SYNC ORDER FROM BACKEND
+  // -------------------------------------------------------------
   const syncOrderFromBackend = async (orderId) => {
     try {
       const response = await fetch(`http://localhost:4028/api/orders/${orderId}`);
-      if (!response.ok) {
-        console.warn("No se pudo refrescar el pedido:", response.status);
-        return;
-      }
+      if (!response.ok) return;
 
-      const updatedOrder = await response.json();
+      const updated = await response.json();
 
-      // Actualizar estado global + localStorage
       setOrders((prev) => {
         const newOrders = prev.map((o) =>
-          o.id === orderId ? updatedOrder : o
+          o.id === orderId ? updated : o
         );
-        localStorage.setItem("orders", JSON.stringify(newOrders));
+        localStorage.setItem(`orders_${userKey}`, JSON.stringify(newOrders));
         return newOrders;
       });
-
     } catch (err) {
-      console.error("Error sincronizando pedido:", err);
+      console.error("Error syncing order:", err);
     }
   };
 
-  // --- CONTEXT VALUE ---
+  // -------------------------------------------------------------
+  // TOTALS
+  // -------------------------------------------------------------
+  const { cartCount, subtotal, total } = useMemo(() => {
+    const safeItems = cleanCartItems(items);
+
+    const cartCount = safeItems.reduce((n, i) => n + (i.qty || 1), 0);
+
+    const subtotal = safeItems.reduce((sum, i) => {
+      const qty = i.qty || 1;
+
+      if (i.customProduct) {
+        return sum + (i.customProduct.price || 0) * qty;
+      }
+
+      return sum + (i.product?.price || 0) * qty;
+    }, 0);
+
+    const total = subtotal;
+
+    return { cartCount, subtotal, total };
+  }, [items]);
+
+  // -------------------------------------------------------------
   const value = useMemo(
     () => ({
       items,
@@ -362,31 +314,31 @@ const mapCreationType = (type) => {
       updateQty,
       removeFromCart,
       clearCart,
+
       cartCount,
       subtotal,
       total,
+
       orders,
       placeOrder,
       setOrders,
       getLastFiveOrders,
-      // Favorites functions
+
       favorites,
       addToFavorites,
       removeFromFavorites,
       clearFavorites,
+
       syncOrderFromBackend,
     }),
     [items, cartCount, subtotal, total, orders, favorites]
   );
 
-  return (
-    <CartContext.Provider value={value}>{children}</CartContext.Provider>
-  );
+  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 };
 
 export const useCart = () => {
   const ctx = useContext(CartContext);
-  if (!ctx)
-    throw new Error("useCart must be used within a CartProvider");
+  if (!ctx) throw new Error("useCart must be used within a CartProvider");
   return ctx;
 };

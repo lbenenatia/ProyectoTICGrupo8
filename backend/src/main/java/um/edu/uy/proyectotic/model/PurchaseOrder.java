@@ -30,9 +30,15 @@ public class PurchaseOrder {
     @Column(name = "creation_date", nullable = false)
     private LocalDateTime creationDate = LocalDateTime.now();
 
+<<<<<<< HEAD
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private OrderStatus status = OrderStatus.QUEUE;
+=======
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 20)
+  private OrderStatus status = OrderStatus.QUEUE;
+>>>>>>> a082518b0d583b3019bfc7b09b9cd6b7cbd05347
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal total = BigDecimal.ZERO;
