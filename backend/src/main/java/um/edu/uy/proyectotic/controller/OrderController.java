@@ -47,8 +47,23 @@ public class OrderController {
         return ResponseEntity.ok(orderService.getOrdersByUser(userEmail));
     }
 
+        @GetMapping("/user/{email}/recent")
+    public ResponseEntity<List<PurchaseOrder>> getLastFiveOrders(@PathVariable String email) {
+        return ResponseEntity.ok(orderService.getLastFiveOrders(email));
+    }
+    
     @GetMapping("/{orderId}")
     public ResponseEntity<PurchaseOrder> getOrderById(@PathVariable Long orderId) {
         return ResponseEntity.ok(orderService.getOrderById(orderId));
     }
+
+    @PutMapping("/{orderId}/cancel")
+    public ResponseEntity<PurchaseOrder> cancelOrder(@PathVariable Long orderId) {
+    return ResponseEntity.ok(orderService.cancelOrder(orderId));
+    }
+
+
+
+
+
 }

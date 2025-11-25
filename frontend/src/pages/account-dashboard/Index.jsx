@@ -16,13 +16,17 @@ const AccountDashboard = () => {
   const { user } = useAuth();
   const { favorites, removeFromFavorites, addToCart } = useCart();
   const location = useLocation();
+
   const [activeTab, setActiveTab] = useState('overview');
   const [addresses, setAddresses] = useState([]);
   const [cards, setCards] = useState([]);
+
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [isCardModalOpen, setIsCardModalOpen] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [selectedCard, setSelectedCard] = useState(null);
+
+  const [ordersList, setOrdersList] = useState([]);
 
   useEffect(() => {
     if (location.state?.defaultTab) {
@@ -30,6 +34,7 @@ const AccountDashboard = () => {
     }
   }, [location.state]);
 
+  // Cargar datos del usuario (direcciones y tarjetas)
   useEffect(() => {
     const fetchUserData = async () => {
       if (!user?.email) return;
@@ -47,6 +52,15 @@ const AccountDashboard = () => {
     };
 
     fetchUserData();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user?.email) return;
+
+    fetch(`http://localhost:4028/api/orders/user/${user.email}/recent`)
+      .then(res => res.json())
+      .then(data => setOrdersList(data))
+      .catch(err => console.error("Error cargando pedidos del usuario:", err));
   }, [user]);
 
   if (!user) {
@@ -70,10 +84,6 @@ const AccountDashboard = () => {
 
   const handleEditProfile = () => {
     console.log('Edit profile clicked');
-  };
-
-  const handleViewOrderDetails = (orderId) => {
-    console.log('View order details for:', orderId);
   };
 
   const handleAddToCart = (itemId) => {
@@ -117,81 +127,14 @@ const AccountDashboard = () => {
     }
   };
 
-  const handleAddAddress = () => {
-    setSelectedAddress(null);
-    setIsAddressModalOpen(true);
-  };
-
-  const handleEditAddress = (address) => {
-    setSelectedAddress(address);
-    setIsAddressModalOpen(true);
-  };
-
-  const handleDeleteAddress = async (addressId) => {
-    if (!window.confirm('¿Estás seguro de que querés eliminar esta dirección?')) return;
-
-    try {
-      const response = await fetch(`http://localhost:4028/api/user/addresses/${addressId}`, {
-        method: 'DELETE'
-      });
-
-      if (response.ok) {
-        setAddresses(addresses.filter(a => a.id !== addressId));
-      }
-    } catch (error) {
-      console.error('Error al eliminar dirección:', error);
-    }
-  };
-
-  const handleSaveAddress = (savedAddress) => {
-    if (selectedAddress) {
-      setAddresses(addresses.map(a => a.id === savedAddress.id ? savedAddress : a));
-    } else {
-      setAddresses([...addresses, savedAddress]);
-    }
-  };
-
-  const handleAddCard = () => {
-    setSelectedCard(null);
-    setIsCardModalOpen(true);
-  };
-
-  const handleEditCard = (card) => {
-    setSelectedCard(card);
-    setIsCardModalOpen(true);
-  };
-
-  const handleDeleteCard = async (cardId) => {
-    if (!window.confirm('¿Estás seguro de que querés eliminar esta tarjeta?')) return;
-
-    try {
-      const response = await fetch(`http://localhost:4028/api/user/cards/${cardId}`, {
-        method: 'DELETE'
-      });
-
-      if (response.ok) {
-        setCards(cards.filter(c => c.id !== cardId));
-      }
-    } catch (error) {
-      console.error('Error al eliminar tarjeta:', error);
-    }
-  };
-
-  const handleSaveCard = (savedCard) => {
-    if (selectedCard) {
-      setCards(cards.map(c => c.id === savedCard.id ? savedCard : c));
-    } else {
-      setCards([...cards, savedCard]);
-    }
-  };
-
   const renderTabContent = () => {
     switch (activeTab) {
       case 'overview':
         return (
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <RecentOrders />
+              <RecentOrders orders={ordersList} />  
+              
               <FavoriteItems
                 favorites={favorites}
                 onAddToCart={handleAddToCart}
@@ -207,23 +150,21 @@ const AccountDashboard = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <AddressesCard
                 addresses={addresses}
-                onEditAddress={handleEditAddress}
-                onAddAddress={handleAddAddress}
-                onDeleteAddress={handleDeleteAddress}
+                onEditAddress={setSelectedAddress}
+                onAddAddress={() => setIsAddressModalOpen(true)}
+                onDeleteAddress={(id) => setAddresses(addresses.filter(a => a.id !== id))}
               />
               <CardsInfo
                 cards={cards}
-                onEditCard={handleEditCard}
-                onAddCard={handleAddCard}
-                onDeleteCard={handleDeleteCard}
+                onEditCard={setSelectedCard}
+                onAddCard={() => setIsCardModalOpen(true)}
+                onDeleteCard={(id) => setCards(cards.filter(c => c.id !== id))}
               />
             </div>
           </div>
         );
       case 'orders':
-        return (
-          <RecentOrders />
-        );
+        return <RecentOrders orders={ordersList} />;
       case 'favorites':
         return (
           <FavoriteItems
@@ -234,19 +175,7 @@ const AccountDashboard = () => {
           />
         );
       default:
-        return (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <RecentOrders />
-              <FavoriteItems
-                favorites={favorites}
-                onAddToCart={handleAddToCart}
-                onRemoveFavorite={handleRemoveFavorite}
-                onCustomize={handleCustomizeItem}
-              />
-            </div>
-          </div>
-        );
+        return null;
     }
   };
 
@@ -255,44 +184,39 @@ const AccountDashboard = () => {
       <Header />
       <div className="pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Profile Header */}
-          <div className="mb-8">
-            <ProfileCard user={userData} onEditProfile={handleEditProfile} />
-          </div>
+          <ProfileCard user={userData} onEditProfile={handleEditProfile} />
 
           {/* Navigation Tabs */}
           <div className="mb-8">
             <div className="border-b border-border">
               <nav className="-mb-px flex space-x-8 overflow-x-auto">
-                {tabs?.map((tab) => (
+                {tabs.map((tab) => (
                   <button
-                    key={tab?.id}
-                    onClick={() => setActiveTab(tab?.id)}
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
                     className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-warm ${
-                      activeTab === tab?.id
-                        ? 'border-primary text-primary' :'border-transparent text-text-secondary hover:text-text-primary hover:border-border'
-                    }`}
-                  >
-                    <Icon name={tab?.icon} size={16} />
-                    <span>{tab?.name}</span>
+                      activeTab === tab.id
+                        ? 'border-primary text-primary'
+                        : 'border-transparent text-text-secondary hover:text-text-primary hover:border-border'
+                    }`}>
+                    <Icon name={tab.icon} size={16} />
+                    <span>{tab.name}</span>
                   </button>
                 ))}
               </nav>
             </div>
           </div>
 
-          {/* Tab Content */}
           <div className="mb-8">
             {renderTabContent()}
           </div>
         </div>
       </div>
 
-      {/* Modales */}
       <AddressModal
         isOpen={isAddressModalOpen}
         onClose={() => setIsAddressModalOpen(false)}
-        onSave={handleSaveAddress}
+        onSave={() => {}}
         address={selectedAddress}
         userEmail={user?.email}
       />
@@ -300,7 +224,7 @@ const AccountDashboard = () => {
       <CardModal
         isOpen={isCardModalOpen}
         onClose={() => setIsCardModalOpen(false)}
-        onSave={handleSaveCard}
+        onSave={() => {}}
         card={selectedCard}
         userEmail={user?.email}
       />

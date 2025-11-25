@@ -15,6 +15,38 @@ const OrderTrackingCard = ({ order, onCancelOrder, onContactDriver }) => {
 
   const status = order.status;
 
+  const isCancelled = status === "CANCELLED";
+
+  if (isCancelled) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-6 shadow-warm">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold text-red-700">
+            Pedido #{order.id}
+          </h3>
+          <span className="text-red-600 font-bold">CANCELLED</span>
+        </div>
+
+        <div className="flex items-center space-x-3">
+          <Icon name="XCircle" size={32} className="text-red-600" />
+          <p className="text-red-700 text-sm">
+            Este pedido fue cancelado y no continuará su preparación ni entrega.
+          </p>
+        </div>
+
+        <div className="mt-6 flex gap-3">
+          <Button variant="ghost" size="sm" iconName="MessageCircle">
+            Contact Support
+          </Button>
+
+          <Button variant="ghost" size="sm" iconName="Receipt">
+            View Receipt
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   const trackingSteps = [
     {
       id: "queue",
@@ -32,8 +64,7 @@ const OrderTrackingCard = ({ order, onCancelOrder, onContactDriver }) => {
       id: "delivering",
       title: "Out for Delivery",
       description: "Your order is on the way",
-      completed:
-        status === "RECEIVED" || status === "DELIVERING",
+      completed: status === "RECEIVED" || status === "DELIVERING",
     },
     {
       id: "received",
@@ -45,7 +76,6 @@ const OrderTrackingCard = ({ order, onCancelOrder, onContactDriver }) => {
 
   return (
     <div className="bg-card rounded-lg border border-border p-6 shadow-warm">
-      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h3 className="text-lg font-semibold text-text-primary">
@@ -67,12 +97,10 @@ const OrderTrackingCard = ({ order, onCancelOrder, onContactDriver }) => {
         </div>
       </div>
 
-      {/* Steps */}
       <div className="space-y-4 mb-6">
         {trackingSteps.map((step, index) => (
           <div key={step.id} className="flex items-start space-x-4">
             <div className="flex flex-col items-center">
-              {/* Icon */}
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center ${
                   step.completed
@@ -89,7 +117,6 @@ const OrderTrackingCard = ({ order, onCancelOrder, onContactDriver }) => {
                 )}
               </div>
 
-              {/* Divider */}
               {index < trackingSteps.length - 1 && (
                 <div
                   className={`w-0.5 h-8 mt-2 ${
@@ -99,7 +126,6 @@ const OrderTrackingCard = ({ order, onCancelOrder, onContactDriver }) => {
               )}
             </div>
 
-            {/* Content */}
             <div className="flex-1 pb-4">
               <h4
                 className={`font-medium ${
@@ -118,7 +144,6 @@ const OrderTrackingCard = ({ order, onCancelOrder, onContactDriver }) => {
         ))}
       </div>
 
-      {/* Buttons */}
       <div className="flex flex-col sm:flex-row gap-3">
         {order.status === "QUEUE" && (
           <Button

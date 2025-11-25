@@ -8,8 +8,9 @@ import { useCart } from '../../context/CartContext';
 import ExtrasSelector from './components/ExtrasSelector';
 
 const BuildYourOwn = () => {
+
   const [selectedType, setSelectedType] = useState('pizza');
-  const [selectedSize, setSelectedSize] = useState('null'); 
+  const [selectedSize, setSelectedSize] = useState(null); 
   const [selectedIngredients, setSelectedIngredients] = useState({});
   const [selectedExtras, setSelectedExtras] = useState({});
   const [ingredientsData, setIngredientsData] = useState({});
@@ -45,71 +46,81 @@ const BuildYourOwn = () => {
     }));
   };
 
-const { addToCart } = useCart();
+  const { addToCart } = useCart();
 
-const handleAddToCart = () => {
-  if (!selectedType || selectedSize === "null") {
-    alert("Debe seleccionar un tipo y tamaño.");
-    return;
-  }
+  const handleAddToCart = () => {
+    if (!selectedType || !selectedSize) { // FIX
+      alert("Debe seleccionar un tipo y tamaño.");
+      return;
+    }
 
-  // Convertir pizza/burger → enum del backend
-  const normalizedType =
-    selectedType === 'pizza' ? 'PIZZA' :
-    selectedType === 'burger' ? 'BURGER' :
-    'PIZZA';
+    // Convertir pizza/burger → enum del backend
+    const normalizedType =
+      selectedType === 'pizza' ? 'PIZZA' :
+      selectedType === 'burger' ? 'BURGER' :
+      'PIZZA';
 
-  // Aplanar ingredientes en una sola lista
-  const flatIngredients = Object.values(selectedIngredients).flat();
+    const flatIngredients = Object.entries(selectedIngredients).flatMap(([category, ids]) =>
+      ids.map(id => {
+        const ing = ingredientsData?.[category]?.find(i => i.id === id);
+        return ing ? {
+          id: ing.id,
+          name: ing.name,
+          price: ing.price,
+          category: category
+        } : null;
+      }).filter(Boolean)
+    ); 
 
-  // Aplanar extras
-  const flatExtras = Object.values(selectedExtras).flat();
+    const flatExtras = Object.entries(selectedExtras).flatMap(([category, ids]) =>
+      ids.map(id => {
+        const ext = extrasData?.[category]?.find(i => i.id === id);
+        return ext ? {
+          id: ext.id,
+          name: ext.name,
+          price: ext.price,
+          category: category
+        } : null;
+      }).filter(Boolean)
+    ); 
 
-  // Calcular precio base por tamaño (puedes ajustar si cambia)
-  const sizePrices = {
-    small: 25,
-    medium: 35,
-    large: 45
+    // Calcular precio base por tamaño
+    const sizePrices = {
+      small: 25,
+      medium: 35,
+      large: 45
+    };
+
+    const basePrice = sizePrices[selectedSize] || 25;
+
+    const ingredientCost = flatIngredients.reduce(
+      (sum, ing) => sum + (ing.price || 0), 0
+    );
+
+    const extrasCost = flatExtras.reduce(
+      (sum, ext) => sum + (ext.price || 0), 0
+    );
+
+    const totalPrice = basePrice + ingredientCost + extrasCost;
+
+    // Construir el producto personalizado FINAL
+    const customProduct = {
+      name: selectedType === "pizza" ? "Pizza Personalizada" : "Hamburguesa Personalizada",
+      size: selectedSize,
+      ingredients: [...flatIngredients, ...flatExtras], 
+      price: totalPrice,
+      type: normalizedType
+    };
+
+    addToCart(customProduct, {}, 1);
+
+    alert("¡Personalización agregada al carrito!");
   };
-
-  const basePrice = sizePrices[selectedSize] || 25;
-
-  const ingredientCost = flatIngredients.reduce(
-    (sum, ing) => sum + (ing.price || 0), 0
-  );
-
-  const extrasCost = flatExtras.reduce(
-    (sum, ext) => sum + (ext.price || 0), 0
-  );
-
-  const totalPrice = basePrice + ingredientCost + extrasCost;
-
-  // Construir el producto personalizado
-  const customProduct = {
-    name: selectedType === "pizza" ? "Pizza Personalizada" : "Hamburguesa Personalizada",
-    size: selectedSize,
-    ingredients: [...flatIngredients, ...flatExtras],
-    price: totalPrice,
-    type: normalizedType   // ⭐ CLAVE ⭐ →
-                           // PIZZA / BURGER (aceptado por backend)
-  };
-
-  addToCart(customProduct, {}, 1);
-
-  alert("¡Personalización agregada al carrito!");
-
-  // reset opcional
-  // setSelectedIngredients({});
-  // setSelectedExtras({});
-};
-
-
 
   useEffect(() => {
     const editItem = localStorage.getItem("editItem");
     if (editItem) {
       const parsed = JSON.parse(editItem);
-      // precargar datos
       setSelectedType(parsed.type);
       setSelectedSize(parsed.size);
       setSelectedIngredients(parsed.ingredients);
@@ -122,6 +133,7 @@ const handleAddToCart = () => {
       <Header />
       <main className="pt-20 pb-12">
         <div className="max-w-7xl mx-auto px-4 lg:px-6">
+
           {/* Encabezado */}
           <div className="text-center mb-8">
             <h1 className="mt-8 text-3xl font-semibold mb-8 text-gray-800 dark:text-gray-100">
@@ -131,10 +143,12 @@ const handleAddToCart = () => {
               Elegí tu tipo, tamaño, ingredientes y extras. ¡Combiná a tu gusto!
             </p>
           </div>
-          {/* Contenido */}
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
             {/* Izquierda */}
             <div className="lg:col-span-2 space-y-6">
+
               <ProductTypeSelector
                 selectedType={selectedType}
                 onTypeChange={handleTypeChange}
@@ -159,12 +173,13 @@ const handleAddToCart = () => {
 
               {selectedType && (
                 <ExtrasSelector
-                productType={selectedType}
-                selectedExtras={selectedExtras}
-                onExtraChange={handleExtraChange}
-                onExtrasLoaded={(data) => setExtrasData(data)}
-              />
+                  productType={selectedType}
+                  selectedIngredients={selectedExtras}   
+                  onIngredientChange={handleExtraChange} 
+                  onIngredientsLoaded={(data) => setExtrasData(data)} 
+                />
               )}
+
             </div>
 
             {/* Derecha */}
@@ -173,10 +188,13 @@ const handleAddToCart = () => {
                 productType={selectedType}
                 selectedSize={selectedSize}
                 selectedIngredients={selectedIngredients}
+                selectedExtras={selectedExtras} 
                 ingredientsData={ingredientsData}
+                extrasData={extrasData} 
                 onAddToCart={handleAddToCart}
               />
             </div>
+
           </div>
         </div>
       </main>

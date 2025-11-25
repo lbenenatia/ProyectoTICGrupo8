@@ -31,6 +31,7 @@ const CartPage = () => {
     syncOrderFromBackend,
   } = useCart();
 
+  // --- Load saved address ---
   useEffect(() => {
     const storedAddress = localStorage.getItem('deliveryAddress');
     if (storedAddress) {
@@ -51,6 +52,7 @@ const CartPage = () => {
     localStorage.setItem('deliveryAddress', JSON.stringify(newAddress));
   };
 
+  // --- Saved cards ---
   const [savedCards, setSavedCards] = useState(() => {
     try {
       const raw = localStorage.getItem('savedCards');
@@ -87,23 +89,6 @@ const CartPage = () => {
     }
   };
 
-  useEffect(() => {
-    if (orders.length === 0) return;
-
-    if (activeTab === "tracking") {
-      orders.forEach(o => syncOrderFromBackend(o.id));
-    }
-
-    // Refrescar automáticamente
-    const interval = setInterval(() => {
-      if (activeTab === "tracking") {
-        orders.forEach(o => syncOrderFromBackend(o.id));
-      }
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, [orders, activeTab]);
-
   const handleSelectCard = (cardId) => {
     setSelectedPaymentMethod('card');
     setSavedCards((prev) =>
@@ -111,6 +96,18 @@ const CartPage = () => {
     );
   };
 
+  useEffect(() => {
+    if (activeTab !== "tracking") return;
+    if (!orders || orders.length === 0) return;
+
+    const interval = setInterval(() => {
+      orders.forEach(o => syncOrderFromBackend(o.id));
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [activeTab, orders]);
+
+  // --- Totales ---
   const calculateOrderTotals = () => {
     const deliveryFee = selectedDeliveryOption === 'delivery' ? 2.99 : 0;
     const tax = subtotal * 0.08;
@@ -120,13 +117,36 @@ const CartPage = () => {
 
   const { deliveryFee, tax, total: totalOrder } = calculateOrderTotals();
 
-  const handlePlaceOrder = () => {
-    const newOrder = placeOrder(selectedDeliveryOption);
+  // --- Place order ---
+  const handlePlaceOrder = async () => {
+    const newOrder = await placeOrder(selectedDeliveryOption);
     if (newOrder) setActiveTab('tracking');
   };
 
-  const handleCancelOrder = (orderId) => {
-    setOrders((prev) => prev.filter((o) => o.id !== orderId));
+  // --- Cancel order (BACKEND REAL) ---
+  const handleCancelOrder = async (orderId) => {
+    if (!window.confirm("¿Seguro que querés cancelar este pedido?")) return;
+
+    try {
+      const res = await fetch(`http://localhost:4028/api/orders/${orderId}/cancel`, {
+        method: "PUT"
+      });
+
+      if (!res.ok) {
+        alert("No se pudo cancelar el pedido.");
+        return;
+      }
+
+      const updated = await res.json();
+
+      setOrders(prev =>
+        prev.map(o => (o.id === orderId ? updated : o))
+      );
+
+    } catch (err) {
+      console.error("Error cancelando pedido:", err);
+      alert("Hubo un error cancelando el pedido.");
+    }
   };
 
   const handleContactDriver = (driver) => {
@@ -145,16 +165,12 @@ const CartPage = () => {
   };
 
   const handleRemoveItem = (itemId) => {
-    console.log('Eliminando item del carrito:', itemId);
     removeFromCart(itemId);
   };
 
   const handleModifyItem = (itemId) => {
     const itemToEdit = cartItems.find(item => item.id === itemId);
     if (itemToEdit) {
-      console.log('Editando item:', itemToEdit);
-      
-      // Si es un producto personalizado
       if (itemToEdit.customProduct) {
         const customData = itemToEdit.customProduct.customData;
         localStorage.setItem("itemToEdit", JSON.stringify({
@@ -164,7 +180,6 @@ const CartPage = () => {
         }));
         navigate(`/customize?product=${customData.type}&edit=true`);
       } else {
-        // Navegar a la página de personalización o producto
         navigate(`/product/${itemToEdit.product.id}?edit=true`);
       }
     }
@@ -182,6 +197,7 @@ const CartPage = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <main className="pt-16">
+
         {/* Hero */}
         <section className="bg-gradient-to-r from-primary/10 to-accent/10 py-12">
           <div className="max-w-7xl mx-auto px-4 lg:px-6 text-center">
@@ -197,8 +213,8 @@ const CartPage = () => {
         {/* Tabs */}
         <section className="sticky top-16 z-40">
           <div className="max-w-7xl mx-auto px-4 lg:px-6">
-            <div className="bg-background"> {/* Fondo neutral */}
-              <div className="inline-flex space-x-1 bg-card border border-border rounded-lg p-2"> {/* Todo en una línea */}
+            <div className="bg-background">
+              <div className="inline-flex space-x-1 bg-card border border-border rounded-lg p-2">
                 {tabs.map((tab) => (
                   <Button
                     key={tab.id}
@@ -220,11 +236,12 @@ const CartPage = () => {
         {/* Content */}
         <section className="py-8">
           <div className="max-w-7xl mx-auto px-4 lg:px-6">
-            {/* --- NUEVO PEDIDO --- */}
+
+            {/* NEW ORDER */}
             {activeTab === 'new-order' && (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 space-y-6">
-                  {/* Dirección */}
+
                   <DeliveryOptionsCard
                     selectedOption={selectedDeliveryOption}
                     onOptionChange={setSelectedDeliveryOption}
@@ -232,7 +249,6 @@ const CartPage = () => {
                     onAddressChange={handleAddressChange}
                   />
 
-                  {/* Método de pago */}
                   <PaymentMethodCard
                     selectedMethod={selectedPaymentMethod}
                     onMethodChange={setSelectedPaymentMethod}
@@ -240,9 +256,9 @@ const CartPage = () => {
                     onAddCard={handleAddCard}
                     onSelectCard={handleSelectCard}
                   />
+
                 </div>
 
-                {/* Resumen */}
                 <div className="space-y-6">
                   <OrderSummaryCard
                     items={cartItems}
@@ -269,7 +285,7 @@ const CartPage = () => {
               </div>
             )}
 
-            {/* --- SEGUIMIENTO --- */}
+            {/* TRACKING */}
             {activeTab === 'tracking' && (
               <div className="max-w-4xl mx-auto">
                 {orders.length > 0 ? (
@@ -305,7 +321,7 @@ const CartPage = () => {
               </div>
             )}
 
-            {/* --- VOLVER A PEDIR --- */}
+            {/* REORDER */}
             {activeTab === 'reorder' && (
               <div className="max-w-4xl mx-auto">
                 {recentOrders.length > 0 ? (
@@ -332,8 +348,10 @@ const CartPage = () => {
                 )}
               </div>
             )}
+
           </div>
         </section>
+
       </main>
     </div>
   );

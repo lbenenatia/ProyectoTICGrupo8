@@ -1,6 +1,9 @@
 package um.edu.uy.proyectotic.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import um.edu.uy.proyectotic.model.PurchaseOrder;
@@ -46,4 +49,27 @@ public class OrderService {
         return orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
     }
+
+    @Transactional
+    public PurchaseOrder cancelOrder(Long orderId) {
+        PurchaseOrder order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
+
+        if (order.getStatus() != OrderStatus.QUEUE) {
+            throw new RuntimeException("El pedido no se puede cancelar en este estado");
+        }
+
+        order.setStatus(OrderStatus.CANCELLED);
+        return orderRepository.save(order);
+    }
+
+    public List<PurchaseOrder> getLastFiveOrders(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        Pageable limit = PageRequest.of(0, 5);
+
+        return orderRepository.findLastFiveByUser(user, limit);
+    }
+    
 }

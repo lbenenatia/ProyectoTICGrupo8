@@ -212,7 +212,19 @@ const mapCreationType = (type) => {
 
     // 2) Agregar creaciones
     for (const item of items) {
-      const productIds = item.ingredients?.map((i) => i.id) || [];
+      let productIds = [];
+
+      if (item.customProduct?.customData?.ingredients) {
+        productIds = item.customProduct.customData.ingredients
+          .map((i) => i.id)
+          .filter((id) => id != null);
+      }
+
+      else if (item.ingredients) {
+        productIds = item.ingredients
+          .map((i) => i.id)
+          .filter((id) => id != null);
+      }
 
       let rawType;
 
