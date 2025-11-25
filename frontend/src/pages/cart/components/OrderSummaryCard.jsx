@@ -14,6 +14,8 @@ const OrderSummaryCard = ({ items, deliveryFee, total, onModifyItem, onRemoveIte
     }
   };
 
+  
+
   return (
     <div className="bg-card rounded-lg border border-border p-6 shadow-warm">
       <div className="flex items-center justify-between mb-4">

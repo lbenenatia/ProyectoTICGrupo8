@@ -5,6 +5,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
+import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 
 const CartContext = createContext(null);
@@ -33,9 +34,7 @@ export const CartProvider = ({ children }) => {
   const userKey = user?.email || "guest";
 
   const [items, setItems] = useState([]);
-
   const [orders, setOrders] = useState([]);
-
   const [favorites, setFavorites] = useState([]);
 
   useEffect(() => {
@@ -43,7 +42,6 @@ export const CartProvider = ({ children }) => {
       setItems([]);
       setOrders([]);
       setFavorites([]);
-
       localStorage.removeItem("cart_guest");
       localStorage.removeItem("orders_guest");
       localStorage.removeItem("favorites_guest");
@@ -61,7 +59,32 @@ export const CartProvider = ({ children }) => {
     setItems(loadedItems);
     setOrders(loadedOrders);
     setFavorites(loadedFavs);
+
+    // Cargar pedidos del backend usando endpoint de admin temporalmente
+    fetchUserOrders();
   }, [userKey, user]);
+
+  const fetchUserOrders = async () => {
+    if (!user) return;
+    
+    try {
+      const token = localStorage.getItem("authToken");
+      if (!token) return;
+
+      // Usar el nuevo endpoint de usuario
+      const response = await axios.get("http://localhost:4028/api/user/orders", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      console.log("Orders from user endpoint:", response.data);
+      setOrders(response.data || []);
+      
+    } catch (error) {
+      console.error("Error fetching user orders:", error);
+      // En caso de error, mantener array vacío para forzar uso del backend
+      setOrders([]);
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -77,6 +100,12 @@ export const CartProvider = ({ children }) => {
     if (!user) return;
     try {
       localStorage.setItem(`orders_${userKey}`, JSON.stringify(orders));
+      
+      // GUARDAR TAMBIÉN EN UN LUGAR GLOBAL PARA EL ADMIN
+      const allUserOrders = JSON.parse(localStorage.getItem('all_orders') || '{}');
+      allUserOrders[userKey] = orders;
+      localStorage.setItem('all_orders', JSON.stringify(allUserOrders));
+      
     } catch (error) {
       console.error("Error guardando orders:", error);
     }
@@ -84,12 +113,23 @@ export const CartProvider = ({ children }) => {
 
   useEffect(() => {
     if (!user) return;
-    try {
+    try { 
       localStorage.setItem(`favorites_${userKey}`, JSON.stringify(favorites));
     } catch (error) {
       console.error("Error guardando favoritos:", error);
     }
   }, [favorites, userKey, user]);
+
+  // Polling para actualizar estados de pedidos
+  useEffect(() => {
+    if (!user) return;
+
+    const interval = setInterval(() => {
+      fetchUserOrders();
+    }, 15000); // Actualizar cada 15 segundos (menos frecuente)
+
+    return () => clearInterval(interval);
+  }, [user]);
 
   const addToCart = (product, options = {}, qty = 1) => {
     console.log("addToCart llamado con:", { product, options, qty });
@@ -194,53 +234,88 @@ export const CartProvider = ({ children }) => {
     setFavorites([]);
   };
 
-  const placeOrder = (deliveryType = "delivery") => {
+  const placeOrder = async (deliveryType = "delivery") => {
     const cleanedItems = cleanCartItems(items);
-    if (cleanedItems.length === 0) return null;
+    if (cleanedItems.length === 0) {
+      alert("El carrito está vacío");
+      return null;
+    }
 
-    const newOrder = {
-      id: `ORD-${Date.now()}`,
-      status: "preparing",
-      createdAt: new Date().toISOString(),
-      deliveryType,
-      items: cleanedItems,
-      total,
-      driver: null,
-    };
+    try {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        throw new Error("No authentication token");
+      }
 
-    setOrders((prev) => [...(Array.isArray(prev) ? prev : []), newOrder]);
-    clearCart();
-    return newOrder;
+      // Calcular total
+      const orderTotal = cleanedItems.reduce((sum, item) => {
+        if (item.customProduct) {
+          return sum + (item.customProduct.price * (item.qty || 1));
+        } else {
+          return sum + (item.product?.price * (item.qty || 1));
+        }
+      }, 0);
+
+      // Preparar el pedido para el backend
+      const orderData = {
+        items: cleanedItems.map(item => {
+          const baseItem = {
+            quantity: item.qty || 1,
+            price: item.customProduct ? item.customProduct.price : item.product?.price
+          };
+
+          if (item.customProduct) {
+            return {
+              ...baseItem,
+              productId: null,
+              customProduct: item.customProduct
+            };
+          } else {
+            return {
+              ...baseItem,
+              productId: item.product?.id,
+              size: item.size,
+              ingredients: item.ingredients
+            };
+          }
+        }),
+        total: orderTotal,
+        deliveryType: deliveryType,
+        status: "QUEUE" // Esto será sobrescrito por el backend, pero lo enviamos por seguridad
+      };
+
+      console.log("Enviando pedido al backend:", orderData);
+
+      // Enviar al backend usando el nuevo endpoint de usuario
+      const response = await axios.post(
+        "http://localhost:4028/api/user/orders", 
+        orderData,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const newOrder = response.data;
+      console.log("Pedido creado en backend:", newOrder);
+
+      // Actualizar la lista de pedidos
+      await fetchUserOrders();
+      
+      // Limpiar carrito
+      clearCart();
+      
+      alert("✅ Pedido creado exitosamente");
+      return newOrder;
+
+    } catch (error) {
+      console.error("Error creando pedido:", error);
+      alert("❌ Error al crear el pedido. Por favor, intenta nuevamente.");
+      return null;
+    }
   };
 
   const getLastFiveOrders = () => {
     const arr = Array.isArray(orders) ? orders : [];
     return [...arr].slice(-5).reverse();
   };
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setOrders((prev) => {
-        const arr = Array.isArray(prev) ? prev : [];
-        return arr.map((order) =>
-          order.status === "preparing"
-            ? {
-                ...order,
-                status: "out-for-delivery",
-                driver: {
-                  name: "Mike Johnson",
-                  vehicle: "Honda Civic - ABC 123",
-                },
-              }
-            : order.status === "out-for-delivery"
-            ? { ...order, status: "delivered" }
-            : order
-        );
-      });
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   const { cartCount, subtotal, total } = useMemo(() => {
     const safeItems = cleanCartItems(items);

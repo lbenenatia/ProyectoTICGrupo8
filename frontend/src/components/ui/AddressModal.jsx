@@ -17,22 +17,29 @@ const AddressModal = ({ isOpen, onClose, onSave, address, userEmail }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // 🔹 CORREGIDO: Limpiar formulario cuando se abre/cierra el modal
   useEffect(() => {
-    if (address) {
-      setFormData(address);
-    } else {
-      setFormData({
-        label: '',
-        address1: '',
-        address2: '',
-        number: '',
-        city: '',
-        state: '',
-        zipCode: '',
-        phone: ''
-      });
+    if (isOpen) {
+      if (address) {
+        // Si estamos editando, cargar los datos de la dirección
+        setFormData(address);
+      } else {
+        // Si estamos creando nueva, limpiar el formulario
+        setFormData({
+          label: '',
+          address1: '',
+          address2: '',
+          number: '',
+          city: '',
+          state: '',
+          zipCode: '',
+          phone: ''
+        });
+      }
+      setError(null);
+      setLoading(false);
     }
-  }, [address]);
+  }, [isOpen, address]); // 🔹 Se ejecuta cuando cambia isOpen o address
 
   const handleChange = (e) => {
     setFormData({
@@ -46,32 +53,74 @@ const AddressModal = ({ isOpen, onClose, onSave, address, userEmail }) => {
     setLoading(true);
     setError(null);
 
+    // Validación básica
+    if (!formData.label || !formData.address1 || !formData.number || !formData.city || !formData.state || !formData.phone) {
+      setError('Por favor completa todos los campos obligatorios');
+      setLoading(false);
+      return;
+    }
+
     try {
-      const url = address
-        ? `http://localhost:4028/api/user/addresses/${address.id}`
-        : `http://localhost:4028/api/user/${userEmail}/addresses`;
-
-      const method = address ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        onSave(data.address);
-        onClose();
+      // 🔹 CORREGIDO: Usar localStorage en lugar de API
+      const userKey = userEmail || 'guest';
+      const addressesKey = `addresses_${userKey}`;
+      
+      // Obtener direcciones existentes
+      const existingAddresses = JSON.parse(localStorage.getItem(addressesKey) || '[]');
+      
+      let updatedAddresses;
+      
+      if (address) {
+        // 🔹 CORREGIDO: Actualizar dirección existente
+        updatedAddresses = existingAddresses.map(addr => 
+          addr.id === address.id 
+            ? { ...formData, id: address.id } 
+            : addr
+        );
       } else {
-        const errorData = await response.json();
-        setError(errorData.message || 'Error al guardar dirección');
+        // 🔹 CORREGIDO: Crear nueva dirección
+        const newAddress = {
+          ...formData,
+          id: Date.now() // ID único
+        };
+        updatedAddresses = [...existingAddresses, newAddress];
       }
+
+      // Guardar en localStorage
+      localStorage.setItem(addressesKey, JSON.stringify(updatedAddresses));
+      
+      // Encontrar la dirección guardada (para edición) o usar la nueva
+      const savedAddress = address 
+        ? updatedAddresses.find(addr => addr.id === address.id)
+        : updatedAddresses[updatedAddresses.length - 1];
+
+      // Llamar callback de éxito
+      onSave(savedAddress);
+      onClose();
+      
     } catch (err) {
-      setError('Error de conexión');
+      setError('Error al guardar dirección');
+      console.error('Error:', err);
     } finally {
       setLoading(false);
     }
+  };
+
+  // 🔹 CORREGIDO: Función para manejar el cierre correctamente
+  const handleClose = () => {
+    setFormData({
+      label: '',
+      address1: '',
+      address2: '',
+      number: '',
+      city: '',
+      state: '',
+      zipCode: '',
+      phone: ''
+    });
+    setError(null);
+    setLoading(false);
+    onClose();
   };
 
   if (!isOpen) return null;
@@ -85,7 +134,7 @@ const AddressModal = ({ isOpen, onClose, onSave, address, userEmail }) => {
               {address ? 'Editar Dirección' : 'Nueva Dirección'}
             </h2>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="text-text-secondary hover:text-text-primary transition-colors"
             >
               <Icon name="X" size={24} />
@@ -224,7 +273,7 @@ const AddressModal = ({ isOpen, onClose, onSave, address, userEmail }) => {
               <Button
                 type="button"
                 variant="outline"
-                onClick={onClose}
+                onClick={handleClose}
                 className="flex-1"
                 disabled={loading}
               >

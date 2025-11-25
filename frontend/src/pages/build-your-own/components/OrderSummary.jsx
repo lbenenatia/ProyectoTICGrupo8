@@ -74,7 +74,6 @@ const selectedItems = useMemo(() => {
         };
 
   const sizeInfo = sizeMap[selectedSize] || null;
-
   const basePrice = productType === 'pizza' ? 12 : 9;
   const ingredientsPrice = selectedItems.reduce((sum, item) => sum + (item.price || 0), 0);
   const extrasPrice = selectedExtrasItems.reduce((sum, item) => sum + (item.price || 0), 0);

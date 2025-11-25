@@ -13,24 +13,30 @@ const CardModal = ({ isOpen, onClose, onSave, card, userEmail }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // 🔹 CORREGIDO: Limpiar formulario cuando se abre/cierra el modal
   useEffect(() => {
-    if (card) {
-      // Al editar, no mostramos el número completo por seguridad
-      setFormData({
-        cardNumber: '',
-        cardHolder: card.cardHolder,
-        cardExpiry: card.cardExpiry,
-        cardCVV: ''
-      });
-    } else {
-      setFormData({
-        cardNumber: '',
-        cardHolder: '',
-        cardExpiry: '',
-        cardCVV: ''
-      });
+    if (isOpen) {
+      if (card) {
+        // Al editar, mostramos los datos existentes (excepto número completo y CVV por seguridad)
+        setFormData({
+          cardNumber: '', // No mostrar número completo por seguridad
+          cardHolder: card.cardHolder || '',
+          cardExpiry: card.cardExpiry || '',
+          cardCVV: '' // No mostrar CVV por seguridad
+        });
+      } else {
+        // Nueva tarjeta - limpiar formulario
+        setFormData({
+          cardNumber: '',
+          cardHolder: '',
+          cardExpiry: '',
+          cardCVV: ''
+        });
+      }
+      setError(null);
+      setLoading(false);
     }
-  }, [card]);
+  }, [isOpen, card]); // 🔹 Se ejecuta cuando cambia isOpen o card
 
   const formatCardNumber = (value) => {
     const digits = value.replace(/\D/g, '').slice(0, 16);
@@ -73,52 +79,97 @@ const CardModal = ({ isOpen, onClose, onSave, card, userEmail }) => {
       return;
     }
 
-    if (formData.cardCVV && formData.cardCVV.length !== 3) {
+    if (!formData.cardHolder.trim()) {
+      setError('El nombre del titular es requerido');
+      setLoading(false);
+      return;
+    }
+
+    if (!formData.cardExpiry || !/^\d{2}\/\d{2}$/.test(formData.cardExpiry)) {
+      setError('La fecha de vencimiento debe tener el formato MM/AA');
+      setLoading(false);
+      return;
+    }
+
+    if (!card && formData.cardCVV.length !== 3) {
       setError('El CVV debe tener 3 dígitos');
       setLoading(false);
       return;
     }
 
     try {
-      const url = card
-        ? `http://localhost:4028/api/user/cards/${card.id}`
-        : `http://localhost:4028/api/user/${userEmail}/cards`;
-
-      const method = card ? 'PUT' : 'POST';
-
-      const payload = {
+      // 🔹 CORREGIDO: Usar localStorage en lugar de API
+      const userKey = userEmail || 'guest';
+      const cardsKey = `savedCards_${userKey}`;
+      
+      // Obtener tarjetas existentes
+      const existingCards = JSON.parse(localStorage.getItem(cardsKey) || '[]');
+      
+      let updatedCards;
+      
+      // Preparar datos de la tarjeta
+      const cardData = {
         cardHolder: formData.cardHolder,
-        cardExpiry: formData.cardExpiry
+        cardExpiry: formData.cardExpiry,
+        // Solo incluir número si se proporcionó (para nuevas tarjetas o edición con nuevo número)
+        ...(formData.cardNumber && { 
+          cardNumber: formData.cardNumber.replace(/\s/g, ''),
+          last4: formData.cardNumber.replace(/\s/g, '').slice(-4)
+        }),
+        // Solo incluir CVV si se proporcionó
+        ...(formData.cardCVV && { cardCVV: formData.cardCVV }),
+        // Determinar marca basada en el primer dígito
+        brand: formData.cardNumber.startsWith('4') ? 'Visa' : 
+               formData.cardNumber.startsWith('5') ? 'Mastercard' : 'Otra'
       };
 
-      // Solo incluir número y CVV si se proporcionaron
-      if (formData.cardNumber) {
-        payload.cardNumber = formData.cardNumber.replace(/\s/g, '');
-      }
-
-      if (formData.cardCVV) {
-        payload.cardCVV = formData.cardCVV;
-      }
-
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        onSave(data.card);
-        onClose();
+      if (card) {
+        // 🔹 CORREGIDO: Actualizar tarjeta existente
+        updatedCards = existingCards.map(c => 
+          c.id === card.id 
+            ? { ...c, ...cardData, id: card.id } 
+            : c
+        );
       } else {
-        const errorData = await response.json();
-        setError(errorData.message || 'Error al guardar tarjeta');
+        // 🔹 CORREGIDO: Crear nueva tarjeta
+        const newCard = {
+          ...cardData,
+          id: Date.now() // ID único
+        };
+        updatedCards = [...existingCards, newCard];
       }
+
+      // Guardar en localStorage
+      localStorage.setItem(cardsKey, JSON.stringify(updatedCards));
+      
+      // Encontrar la tarjeta guardada (para edición) o usar la nueva
+      const savedCard = card 
+        ? updatedCards.find(c => c.id === card.id)
+        : updatedCards[updatedCards.length - 1];
+
+      // Llamar callback de éxito
+      onSave(savedCard);
+      onClose();
+      
     } catch (err) {
-      setError('Error de conexión');
+      setError('Error al guardar tarjeta');
+      console.error('Error:', err);
     } finally {
       setLoading(false);
     }
+  };
+
+  // 🔹 CORREGIDO: Función para manejar el cierre correctamente
+  const handleClose = () => {
+    setFormData({
+      cardNumber: '',
+      cardHolder: '',
+      cardExpiry: '',
+      cardCVV: ''
+    });
+    setError(null);
+    setLoading(false);
+    onClose();
   };
 
   if (!isOpen) return null;
@@ -132,7 +183,7 @@ const CardModal = ({ isOpen, onClose, onSave, card, userEmail }) => {
               {card ? 'Editar Tarjeta' : 'Nueva Tarjeta'}
             </h2>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="text-text-secondary hover:text-text-primary transition-colors"
             >
               <Icon name="X" size={24} />
@@ -148,14 +199,14 @@ const CardModal = ({ isOpen, onClose, onSave, card, userEmail }) => {
           {card && (
             <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-sm">
               <Icon name="Info" size={16} className="inline mr-2" />
-              Por seguridad, debes ingresar nuevamente el número de tarjeta y CVV
+              {card.last4 ? `Editando tarjeta terminada en ${card.last4}` : 'Editando tarjeta'}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-text-primary mb-1">
-                Número de Tarjeta *
+                Número de Tarjeta {!card && '*'}
               </label>
               <Input
                 type="text"
@@ -201,7 +252,7 @@ const CardModal = ({ isOpen, onClose, onSave, card, userEmail }) => {
 
               <div>
                 <label className="block text-sm font-medium text-text-primary mb-1">
-                  CVV *
+                  CVV {!card && '*'}
                 </label>
                 <Input
                   type="password"
@@ -220,7 +271,7 @@ const CardModal = ({ isOpen, onClose, onSave, card, userEmail }) => {
               <Button
                 type="button"
                 variant="outline"
-                onClick={onClose}
+                onClick={handleClose}
                 className="flex-1"
                 disabled={loading}
               >

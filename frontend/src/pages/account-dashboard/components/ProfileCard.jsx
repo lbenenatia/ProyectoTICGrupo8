@@ -10,7 +10,7 @@ const ProfileCard = ({ user, onEditProfile }) => {
         <div className="flex items-center space-x-4">
           <div className="relative">
             <Image
-              src={user?.avatar}
+              src={'/assets/images/no_avatar.png'}
               alt={user?.name}
               className="w-16 h-16 rounded-full object-cover"
             />
