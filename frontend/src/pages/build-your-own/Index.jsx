@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback} from 'react';
-import { useNavigate } from 'react-router-dom'; // ← AGREGAR ESTE IMPORT
+import { useNavigate } from 'react-router-dom';
 import Header from '../../components/ui/Header';
 import ProductTypeSelector from './components/ProductTypeSelector';
 import SizeSelector from './components/SizeSelector';
@@ -10,7 +10,7 @@ import ExtrasSelector from './components/ExtrasSelector';
 import ConfirmModal from '../../components/ui/ConfirmModal';
 
 const BuildYourOwn = () => {
-  const navigate = useNavigate(); // ← AGREGAR ESTE HOOK
+  const navigate = useNavigate();
   const [selectedType, setSelectedType] = useState('pizza');
   const [selectedSize, setSelectedSize] = useState('null'); 
   const [selectedIngredients, setSelectedIngredients] = useState({});
@@ -23,7 +23,14 @@ const BuildYourOwn = () => {
   const { addToCart, removeFromCart } = useCart();
   const [productToAdd, setProductToAdd] = useState(null);
 
-  // applyEditData function - BUSCAR POR NOMBRE EN LUGAR DE ID
+  useEffect(() => {
+    if (!isEditMode && selectedType && selectedSize === 'null') {
+      const defaultSize = selectedType === 'pizza' ? 'small' : 'single';
+      console.log(`🎯 Seleccionando tamaño por defecto: ${defaultSize} para ${selectedType}`);
+      setSelectedSize(defaultSize);
+    }
+  }, [selectedType, isEditMode, selectedSize]);
+
   const applyEditData = useCallback((data) => {
     console.log("🔄 APPLY EDIT DATA llamado con:", data);
     if (!data) return;
@@ -36,53 +43,67 @@ const BuildYourOwn = () => {
     let ingredientsToSet = {};
     let extrasToSet = {};
     
-    // BUSCAR INGREDIENTES POR NOMBRE EN LUGAR DE ID
     if (data.selectedIngredients && Array.isArray(data.selectedIngredients)) {
-      console.log("🔍 Buscando ingredientes por nombre...");
+      console.log("🔍 Buscando ingredientes...");
       data.selectedIngredients.forEach(ingredient => {
-        console.log("Buscando ingrediente:", ingredient.name, "en categoría:", ingredient.category);
+        console.log("Procesando ingrediente:", ingredient);
         
-        if (ingredient.category && ingredient.name) {
+        if (ingredient.category) {
           const categoryData = ingredientsData[ingredient.category] || [];
-          const foundIngredient = categoryData.find(item => 
-            item.name === ingredient.name || item.id === ingredient.id
-          );
+          
+          let foundIngredient = null;
+          if (ingredient.id) {
+            foundIngredient = categoryData.find(item => item.id === ingredient.id);
+            console.log(`Buscando por ID (${ingredient.id}):`, foundIngredient ? '✅ Encontrado' : '❌ No encontrado');
+          }
+          
+          if (!foundIngredient && ingredient.name) {
+            foundIngredient = categoryData.find(item => item.name === ingredient.name);
+            console.log(`Buscando por nombre (${ingredient.name}):`, foundIngredient ? '✅ Encontrado' : '❌ No encontrado');
+          }
           
           if (foundIngredient) {
             if (!ingredientsToSet[ingredient.category]) {
               ingredientsToSet[ingredient.category] = [];
             }
             ingredientsToSet[ingredient.category].push(foundIngredient.id);
-            console.log(`✅ Encontrado: ${ingredient.name} -> ID: ${foundIngredient.id}`);
+            console.log(`✅ Ingrediente mapeado: ${ingredient.name} -> ID: ${foundIngredient.id}`);
           } else {
-            console.log(`❌ No se encontró: ${ingredient.name} en ${ingredient.category}`);
-            console.log("Disponibles en esta categoría:", categoryData.map(item => item.name));
+            console.log(`❌ No se encontró: ${ingredient.name || ingredient.id} en ${ingredient.category}`);
+            console.log("Disponibles en esta categoría:", categoryData.map(item => `${item.name} (${item.id})`));
           }
         }
       });
     }
     
-    // BUSCAR EXTRAS POR NOMBRE EN LUGAR DE ID
     if (data.selectedExtras && Array.isArray(data.selectedExtras)) {
-      console.log("🔍 Buscando extras por nombre...");
+      console.log("🔍 Buscando extras...");
       data.selectedExtras.forEach(extra => {
-        console.log("Buscando extra:", extra.name, "en categoría:", extra.category);
+        console.log("Procesando extra:", extra);
         
-        if (extra.category && extra.name) {
+        if (extra.category) {
           const categoryData = extrasData[extra.category] || [];
-          const foundExtra = categoryData.find(item => 
-            item.name === extra.name || item.id === extra.id
-          );
+          
+          let foundExtra = null;
+          if (extra.id) {
+            foundExtra = categoryData.find(item => item.id === extra.id);
+            console.log(`Buscando extra por ID (${extra.id}):`, foundExtra ? '✅ Encontrado' : '❌ No encontrado');
+          }
+          
+          if (!foundExtra && extra.name) {
+            foundExtra = categoryData.find(item => item.name === extra.name);
+            console.log(`Buscando extra por nombre (${extra.name}):`, foundExtra ? '✅ Encontrado' : '❌ No encontrado');
+          }
           
           if (foundExtra) {
             if (!extrasToSet[extra.category]) {
               extrasToSet[extra.category] = [];
             }
             extrasToSet[extra.category].push(foundExtra.id);
-            console.log(`✅ Encontrado extra: ${extra.name} -> ID: ${foundExtra.id}`);
+            console.log(`✅ Extra mapeado: ${extra.name} -> ID: ${foundExtra.id}`);
           } else {
-            console.log(`❌ No se encontró: ${extra.name} en ${extra.category}`);
-            console.log("Disponibles en esta categoría:", categoryData.map(item => item.name));
+            console.log(`❌ No se encontró: ${extra.name || extra.id} en ${extra.category}`);
+            console.log("Disponibles en esta categoría:", categoryData.map(item => `${item.name} (${item.id})`));
           }
         }
       });
@@ -103,7 +124,7 @@ const BuildYourOwn = () => {
     if (editItem) {
       try {
         const parsed = JSON.parse(editItem);
-        console.log("📝 EDITITEM ENCONTRADO - RAW:", parsed);
+        console.log("📖 EDITITEM ENCONTRADO - RAW:", parsed);
         
         if (parsed.editMode) {
           console.log("🎯 ACTIVANDO MODO EDICIÓN");
@@ -113,26 +134,37 @@ const BuildYourOwn = () => {
           setSelectedType(parsed.productType || 'pizza');
           setSelectedSize(parsed.selectedSize || 'null');
           
-          // SOLO remover editItem si estamos en modo edición
           localStorage.removeItem("editItem");
           console.log("✅ editItem removido del localStorage");
         }
       } catch (error) {
         console.error("Error al cargar item para editar:", error);
-        // SOLO remover si hay error al parsear
         localStorage.removeItem("editItem");
       }
     } else {
       console.log("❌ NO se encontró editItem en localStorage");
-      // NO remover nada si no hay editItem
     }
   }, []);
 
-  // 2. useEffect - Aplicar datos cuando todo esté cargado
   useEffect(() => {
     if (isEditMode && editData && 
         Object.keys(ingredientsData).length > 0 && 
         Object.keys(extrasData).length > 0) {
+      
+      const editIngredientCategories = editData.selectedIngredients?.map(ing => ing.category) || [];
+      const availableCategories = Object.keys(ingredientsData);
+      
+      const hasMatchingCategories = editIngredientCategories.some(cat => 
+        availableCategories.includes(cat)
+      );
+      
+      if (editIngredientCategories.length > 0 && !hasMatchingCategories) {
+        console.log("⏳ Esperando datos correctos del tipo de producto...");
+        console.log("Categorías necesarias:", editIngredientCategories);
+        console.log("Categorías disponibles:", availableCategories);
+        return;
+      }
+      
       console.log("🚀 TODOS LOS DATOS CARGADOS - Aplicando edición automáticamente");
       applyEditData(editData);
     }
@@ -160,6 +192,7 @@ const BuildYourOwn = () => {
           const found = categoryIngredients.find((ing) => ing.id === id);
           if (found) {
             selectedItems.push({
+              id: found.id,
               category,
               name: found.name,
               price: found.price || 0,
@@ -178,6 +211,7 @@ const BuildYourOwn = () => {
           const found = categoryExtras.find((extra) => extra.id === id);
           if (found) {
             selectedExtrasItems.push({
+              id: found.id,
               category,
               name: found.name,
               price: found.price || 0,
@@ -223,12 +257,9 @@ const BuildYourOwn = () => {
     
     if (isEditing) {
       console.log("✅ Producto editado exitosamente - Redirigiendo al carrito");
-      // ← AGREGAR ESTA LÍNEA PARA REDIRIGIR AL CARRITO
       navigate('/cart');
     } else {
       console.log("✅ Producto agregado al carrito");
-      // Opcional: Si también querés redirigir cuando se agrega un producto nuevo
-      // navigate('/cart');
     }
   };
 
@@ -240,8 +271,14 @@ const BuildYourOwn = () => {
   const handleTypeChange = (type) => {
     if (type === 'pizza') {
       setSelectedType('pizza');
+      if (!isEditMode) {
+        setSelectedSize('small');
+      }
     } else if (type === 'burger') {
       setSelectedType('burger');
+      if (!isEditMode) {
+        setSelectedSize('single');
+      }
     } else {
       setSelectedType(null);
       setSelectedSize(null);
@@ -288,7 +325,6 @@ const BuildYourOwn = () => {
       <Header />
       <main className="pt-20 pb-12">
         <div className="max-w-7xl mx-auto px-4 lg:px-6">
-          {/* Encabezado */}
           <div className="text-center mb-8">
             <h1 className="mt-8 text-3xl font-semibold mb-8 text-gray-800 dark:text-gray-100">
               {isEditMode ? "✏️ Editando Producto" : "Creá Tu Propia Pizza o Hamburguesa"}
@@ -298,9 +334,7 @@ const BuildYourOwn = () => {
             </p>
           </div>
           
-          {/* Contenido */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Izquierda */}
             <div className="lg:col-span-2 space-y-6">
               <ProductTypeSelector
                 selectedType={selectedType}
@@ -340,7 +374,6 @@ const BuildYourOwn = () => {
               )}
             </div>
 
-            {/* Derecha */}
             <div className="space-y-6">
               <OrderSummary
                 productType={selectedType}

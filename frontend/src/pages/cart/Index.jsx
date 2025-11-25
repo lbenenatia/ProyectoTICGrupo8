@@ -158,36 +158,41 @@ const CartPage = () => {
   const handleModifyItem = (itemId) => {
     const itemToEdit = cartItems.find(item => item.id === itemId);
     if (!itemToEdit) {
-      console.error("Item no encontrado");
+      console.error("❌ Item no encontrado");
       return;
     }
 
-    console.log("Editando item:", itemToEdit);
+    console.log("✏️ Editando item:", itemToEdit);
 
     if (itemToEdit.customProduct) {
       const customData = itemToEdit.customProduct.customData;
       
-      console.log("CustomData del producto:", customData);
-      console.log("Ingredients array:", customData.ingredients);
+      console.log("📦 CustomData del producto:", customData);
+      console.log("🍕 Ingredients array:", customData.ingredients);
+      console.log("🎁 Extras array:", customData.extras);
 
-      // CORREGIR: Los ingredientes ya vienen en customData.ingredients como array
-      // NO intentar convertirlos de nuevo, usarlos directamente
       const editData = {
-        ...customData,
         editMode: true,
         originalItemId: itemId,
         productType: customData.type,
         selectedSize: customData.size,
-        selectedIngredients: customData.ingredients || [], // ← Usar directamente
-        selectedExtras: customData.extras || [] // ← Usar directamente
+        selectedIngredients: customData.ingredients || [],
+        selectedExtras: customData.extras || [],
+        sizeInfo: customData.sizeInfo,
+        basePrice: customData.basePrice,
+        ingredientsPrice: customData.ingredientsPrice,
+        extrasPrice: customData.extrasPrice
       };
 
-      console.log("Guardando datos para editar:", editData);
+      console.log("💾 Guardando datos para editar:", editData);
+      console.log("📋 selectedIngredients que se guardarán:", editData.selectedIngredients);
+      console.log("📋 selectedExtras que se guardarán:", editData.selectedExtras);
+      
       localStorage.setItem("editItem", JSON.stringify(editData));
       navigate('/build-your-own');
       
     } else {
-      console.log('Editando producto regular:', itemToEdit);
+      console.log('✏️ Editando producto regular:', itemToEdit);
       navigate(`/product/${itemToEdit.product?.id}?edit=true`);
     }
   };
