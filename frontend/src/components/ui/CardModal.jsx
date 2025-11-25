@@ -3,23 +3,23 @@ import Button from './Button';
 import Input from './Input';
 import Icon from '../AppIcon';
 
-const CardModal = ({ isOpen, onClose, onSave, card, userEmail }) => {
+const CardModal = ({ isOpen, onClose, onSave, card }) => {
   const [formData, setFormData] = useState({
     cardNumber: '',
     cardHolder: '',
     cardExpiry: '',
     cardCVV: ''
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [showCVV, setShowCVV] = useState(false);
 
   useEffect(() => {
     if (card) {
-      // Al editar, no mostramos el número completo por seguridad
+      // Al editar, no mostramos el número completo ni el CVV por seguridad
       setFormData({
         cardNumber: '',
-        cardHolder: card.cardHolder,
-        cardExpiry: card.cardExpiry,
+        cardHolder: card.holder || card.cardHolder || '',
+        cardExpiry: card.expiry || card.cardExpiry || '',
         cardCVV: ''
       });
     } else {
@@ -30,7 +30,8 @@ const CardModal = ({ isOpen, onClose, onSave, card, userEmail }) => {
         cardCVV: ''
       });
     }
-  }, [card]);
+    setErrors({});
+  }, [card, isOpen]);
 
   const formatCardNumber = (value) => {
     const digits = value.replace(/\D/g, '').slice(0, 16);
@@ -44,88 +45,123 @@ const CardModal = ({ isOpen, onClose, onSave, card, userEmail }) => {
       .replace(/^(\d{2})(\d)/, '$1/$2');
   };
 
+  const validateInput = (name, value) => {
+    let regex;
+    switch (name) {
+      case 'cardNumber':
+        regex = /^[0-9 ]*$/;
+        break;
+      case 'cardHolder':
+        regex = /^[A-Za-zÀÉÍÓÚáéíóúÑñ ]*$/;
+        break;
+      case 'cardExpiry':
+        regex = /^[0-9/]*$/;
+        break;
+      case 'cardCVV':
+        regex = /^[0-9]*$/;
+        break;
+      default:
+        regex = /^[^<>%$#@!^*{}[\]\\|]*$/;
+    }
+    return regex.test(value);
+  };
+
   const handleChange = (e) => {
     let { name, value } = e.target;
+
+    if (!validateInput(name, value)) return;
 
     if (name === 'cardNumber') {
       value = formatCardNumber(value);
     } else if (name === 'cardExpiry') {
       value = formatExpiry(value);
     } else if (name === 'cardCVV') {
-      value = value.replace(/\D/g, '').slice(0, 3);
+      value = value.slice(0, 3);
     }
 
-    setFormData({
-      ...formData,
+    setFormData(prev => ({
+      ...prev,
       [name]: value
-    });
+    }));
+
+    if (value.trim() !== '') {
+      setErrors(prev => ({ ...prev, [name]: false }));
+    }
   };
 
-  const handleSubmit = async (e) => {
+  const validateForm = () => {
+    const newErrors = {};
+
+    // Solo validar número si estamos agregando una nueva tarjeta o si se proporcionó
+    if (!card || formData.cardNumber) {
+      if (formData.cardNumber.replace(/\s/g, '').length !== 16) {
+        newErrors.cardNumber = true;
+      }
+    }
+
+    if (!formData.cardHolder.trim()) {
+      newErrors.cardHolder = true;
+    }
+
+    if (!/^\d{2}\/\d{2}$/.test(formData.cardExpiry)) {
+      newErrors.cardExpiry = true;
+    }
+
+    // Solo validar CVV si estamos agregando una nueva tarjeta o si se proporcionó
+    if (!card || formData.cardCVV) {
+      if (formData.cardCVV.length !== 3) {
+        newErrors.cardCVV = true;
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
 
-    // Validaciones
-    if (!card && formData.cardNumber.replace(/\s/g, '').length !== 16) {
-      setError('El número de tarjeta debe tener 16 dígitos');
-      setLoading(false);
+    if (!validateForm()) {
       return;
     }
 
-    if (formData.cardCVV && formData.cardCVV.length !== 3) {
-      setError('El CVV debe tener 3 dígitos');
-      setLoading(false);
-      return;
+    // Preparar datos para guardar
+    const dataToSave = {
+      cardHolder: formData.cardHolder,
+      holder: formData.cardHolder, // Compatibilidad
+      cardExpiry: formData.cardExpiry,
+      expiry: formData.cardExpiry // Compatibilidad
+    };
+
+    // Solo incluir número y CVV si se proporcionaron
+    if (formData.cardNumber) {
+      dataToSave.cardNumber = formData.cardNumber;
+      dataToSave.number = formData.cardNumber; // Compatibilidad
     }
 
-    try {
-      const url = card
-        ? `http://localhost:4028/api/user/cards/${card.id}`
-        : `http://localhost:4028/api/user/${userEmail}/cards`;
-
-      const method = card ? 'PUT' : 'POST';
-
-      const payload = {
-        cardHolder: formData.cardHolder,
-        cardExpiry: formData.cardExpiry
-      };
-
-      // Solo incluir número y CVV si se proporcionaron
-      if (formData.cardNumber) {
-        payload.cardNumber = formData.cardNumber.replace(/\s/g, '');
-      }
-
-      if (formData.cardCVV) {
-        payload.cardCVV = formData.cardCVV;
-      }
-
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        onSave(data.card);
-        onClose();
-      } else {
-        const errorData = await response.json();
-        setError(errorData.message || 'Error al guardar tarjeta');
-      }
-    } catch (err) {
-      setError('Error de conexión');
-    } finally {
-      setLoading(false);
+    if (formData.cardCVV) {
+      dataToSave.cardCVV = formData.cardCVV;
+      dataToSave.cvv = formData.cardCVV; // Compatibilidad
     }
+
+    onSave(dataToSave);
   };
 
   if (!isOpen) return null;
 
+  const inputRing = "ring-1 ring-border focus:ring-2 focus:ring-primary/60 focus:border-primary/60 rounded-md transition-shadow";
+  const errorRing = "ring-1 ring-red-500 focus:ring-2 focus:ring-red-400 focus:border-red-400 rounded-md transition-shadow";
+
+  const Label = ({ text, required }) => (
+    <span className="font-medium text-text-primary">
+      {text}
+      {required && <span className="text-red-500 ml-0.5">*</span>}
+    </span>
+  );
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-md w-full">
+      <div className="bg-card dark:bg-card rounded-lg max-w-md w-full">
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-semibold text-text-primary">
@@ -139,99 +175,106 @@ const CardModal = ({ isOpen, onClose, onSave, card, userEmail }) => {
             </button>
           </div>
 
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700">
-              {error}
-            </div>
-          )}
-
           {card && (
-            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-sm">
-              <Icon name="Info" size={16} className="inline mr-2" />
-              Por seguridad, debes ingresar nuevamente el número de tarjeta y CVV
+            <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <p className="text-sm text-blue-700 dark:text-blue-300 flex items-start gap-2">
+                <Icon name="Info" size={16} className="mt-0.5 flex-shrink-0" />
+                <span>Por seguridad, si querés cambiar el número de tarjeta o CVV, ingresalos nuevamente.</span>
+              </p>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-text-primary mb-1">
-                Número de Tarjeta *
-              </label>
+              <Label text="Número de Tarjeta" required={!card} />
               <Input
                 type="text"
                 name="cardNumber"
                 value={formData.cardNumber}
                 onChange={handleChange}
-                placeholder="1234 5678 9012 3456"
-                required={!card}
-                className="w-full"
+                placeholder={card ? "•••• •••• •••• " + String(card.number || card.cardNumber).slice(-4) : "1234 5678 9012 3456"}
+                className={`${errors.cardNumber ? errorRing : inputRing} w-full mt-1`}
               />
+              {errors.cardNumber && (
+                <p className="text-xs text-red-500 mt-1">
+                  El número de tarjeta debe tener 16 dígitos
+                </p>
+              )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-text-primary mb-1">
-                Titular *
-              </label>
+              <Label text="Titular" required />
               <Input
                 type="text"
                 name="cardHolder"
                 value={formData.cardHolder}
                 onChange={handleChange}
-                placeholder="Juan Pérez"
-                required
-                className="w-full"
+                placeholder="Nombre del titular"
+                className={`${errors.cardHolder ? errorRing : inputRing} w-full mt-1`}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-text-primary mb-1">
-                  Vencimiento *
-                </label>
+                <Label text="Vencimiento" required />
                 <Input
                   type="text"
                   name="cardExpiry"
                   value={formData.cardExpiry}
                   onChange={handleChange}
                   placeholder="MM/AA"
-                  required
-                  className="w-full"
+                  className={`${errors.cardExpiry ? errorRing : inputRing} w-full mt-1`}
                 />
+                {errors.cardExpiry && (
+                  <p className="text-xs text-red-500 mt-1">
+                    Formato: MM/AA
+                  </p>
+                )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-text-primary mb-1">
-                  CVV *
-                </label>
-                <Input
-                  type="password"
-                  name="cardCVV"
-                  value={formData.cardCVV}
-                  onChange={handleChange}
-                  placeholder="•••"
-                  maxLength={3}
-                  required={!card}
-                  className="w-full"
-                />
+                <Label text="CVV" required={!card} />
+                <div className="relative">
+                  <Input
+                    type={showCVV ? "text" : "password"}
+                    name="cardCVV"
+                    value={formData.cardCVV}
+                    onChange={handleChange}
+                    placeholder="•••"
+                    maxLength={3}
+                    className={`${errors.cardCVV ? errorRing : inputRing} w-full mt-1 pr-10`}
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-text-secondary hover:text-text-primary"
+                    onClick={() => setShowCVV(prev => !prev)}
+                  >
+                    <Icon name={showCVV ? "EyeOff" : "Eye"} size={18} />
+                  </button>
+                </div>
+                {errors.cardCVV && (
+                  <p className="text-xs text-red-500 mt-1">
+                    El CVV debe tener 3 dígitos
+                  </p>
+                )}
               </div>
             </div>
 
-            <div className="flex gap-3 pt-4">
+            <div className="flex gap-3 pt-4 border-t border-border">
               <Button
                 type="button"
                 variant="outline"
                 onClick={onClose}
                 className="flex-1"
-                disabled={loading}
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
+                variant="default"
                 className="flex-1"
-                disabled={loading}
               >
-                {loading ? 'Guardando...' : card ? 'Actualizar' : 'Agregar'}
+                {card ? 'Actualizar' : 'Agregar'}
               </Button>
             </div>
           </form>

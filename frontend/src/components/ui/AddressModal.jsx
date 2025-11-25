@@ -3,82 +3,136 @@ import Button from './Button';
 import Input from './Input';
 import Icon from '../AppIcon';
 
-const AddressModal = ({ isOpen, onClose, onSave, address, userEmail }) => {
+const AddressModal = ({ isOpen, onClose, onSave, address }) => {
   const [formData, setFormData] = useState({
     label: '',
-    address1: '',
-    address2: '',
+    street1: '',
+    street2: '',
     number: '',
     city: '',
     state: '',
-    zipCode: '',
     phone: ''
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (address) {
-      setFormData(address);
+      setFormData({
+        label: address.label || '',
+        street1: address.street1 || address.address1 || '',
+        street2: address.street2 || address.address2 || '',
+        number: address.number || '',
+        city: address.city || '',
+        state: address.state || '',
+        phone: address.phone || ''
+      });
     } else {
       setFormData({
         label: '',
-        address1: '',
-        address2: '',
+        street1: '',
+        street2: '',
         number: '',
         city: '',
         state: '',
-        zipCode: '',
         phone: ''
       });
     }
-  }, [address]);
+    setErrors({});
+  }, [address, isOpen]);
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+  const validateInput = (name, value) => {
+    let regex;
+    switch (name) {
+      case 'number':
+        regex = /^[0-9]*$/;
+        break;
+      case 'phone':
+        regex = /^[0-9 ]*$/;
+        break;
+      case 'city':
+      case 'state':
+      case 'street1':
+      case 'street2':
+      case 'label':
+        regex = /^[A-Za-zÀÉÍÓÚáéíóúÑñ0-9 ,.()-]*$/;
+        break;
+      default:
+        regex = /^[^<>%$#@!^*{}[\]\\|]*$/;
+    }
+    return regex.test(value);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
+  const formatPhone = (value) => {
+    const digits = value.replace(/\D/g, '').slice(0, 9);
+    return digits.replace(/(\d{3})(?=\d)/g, '$1 ').trim();
+  };
 
-    try {
-      const url = address
-        ? `http://localhost:4028/api/user/addresses/${address.id}`
-        : `http://localhost:4028/api/user/${userEmail}/addresses`;
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    const inputType = e.nativeEvent?.inputType;
 
-      const method = address ? 'PUT' : 'POST';
+    if (!validateInput(name, value)) return;
 
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        onSave(data.address);
-        onClose();
-      } else {
-        const errorData = await response.json();
-        setError(errorData.message || 'Error al guardar dirección');
-      }
-    } catch (err) {
-      setError('Error de conexión');
-    } finally {
-      setLoading(false);
+    let formatted = value;
+    if (name === 'phone' && inputType !== 'deleteContentBackward') {
+      formatted = formatPhone(value);
     }
+
+    setFormData(prev => ({
+      ...prev,
+      [name]: formatted
+    }));
+
+    if (formatted.trim() !== '') {
+      setErrors(prev => ({ ...prev, [name]: false }));
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    const requiredFields = ['street1', 'number', 'city', 'state', 'phone'];
+    
+    requiredFields.forEach(field => {
+      if (!formData[field]?.trim()) {
+        newErrors[field] = true;
+      }
+    });
+
+    // Validar teléfono (9 dígitos en Uruguay)
+    const phoneDigits = formData.phone.replace(/\D/g, '');
+    if (phoneDigits.length !== 9) {
+      newErrors.phone = true;
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+
+    onSave(formData);
   };
 
   if (!isOpen) return null;
 
+  const inputRing = "ring-1 ring-border focus:ring-2 focus:ring-primary/60 focus:border-primary/60 rounded-md transition-shadow";
+  const errorRing = "ring-1 ring-red-500 focus:ring-2 focus:ring-red-400 focus:border-red-400 rounded-md transition-shadow";
+
+  const Label = ({ text, required }) => (
+    <span className="font-medium text-text-primary">
+      {text}
+      {required && <span className="text-red-500 ml-0.5">*</span>}
+    </span>
+  );
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-card dark:bg-card rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-semibold text-text-primary">
@@ -92,150 +146,115 @@ const AddressModal = ({ isOpen, onClose, onSave, address, userEmail }) => {
             </button>
           </div>
 
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700">
-              {error}
-            </div>
-          )}
-
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Label text="Etiqueta (opcional)" />
+              <Input
+                type="text"
+                name="label"
+                value={formData.label}
+                onChange={handleChange}
+                placeholder="Casa, Trabajo, etc."
+                className={`${inputRing} w-full mt-1`}
+              />
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-text-primary mb-1">
-                  Etiqueta *
-                </label>
+                <Label text="Calle Principal" required />
                 <Input
                   type="text"
-                  name="label"
-                  value={formData.label}
+                  name="street1"
+                  value={formData.street1}
                   onChange={handleChange}
-                  placeholder="Casa, Trabajo, etc."
-                  required
-                  className="w-full"
+                  placeholder="Av. 18 de Julio"
+                  className={`${errors.street1 ? errorRing : inputRing} w-full mt-1`}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-text-primary mb-1">
-                  Teléfono *
-                </label>
-                <Input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  placeholder="099 123 456"
-                  required
-                  className="w-full"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-text-primary mb-1">
-                  Calle Principal *
-                </label>
-                <Input
-                  type="text"
-                  name="address1"
-                  value={formData.address1}
-                  onChange={handleChange}
-                  placeholder="Av. Italia"
-                  required
-                  className="w-full"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-text-primary mb-1">
-                  Número *
-                </label>
+                <Label text="Número" required />
                 <Input
                   type="text"
                   name="number"
                   value={formData.number}
                   onChange={handleChange}
                   placeholder="1234"
-                  required
-                  className="w-full"
+                  className={`${errors.number ? errorRing : inputRing} w-full mt-1`}
                 />
               </div>
+            </div>
 
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-text-primary mb-1">
-                  Calle Secundaria (Opcional)
-                </label>
-                <Input
-                  type="text"
-                  name="address2"
-                  value={formData.address2}
-                  onChange={handleChange}
-                  placeholder="Av. Bolivia"
-                  className="w-full"
-                />
-              </div>
+            <div>
+              <Label text="Calle Secundaria (opcional)" />
+              <Input
+                type="text"
+                name="street2"
+                value={formData.street2}
+                onChange={handleChange}
+                placeholder="Entre calles"
+                className={`${inputRing} w-full mt-1`}
+              />
+            </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-text-primary mb-1">
-                  Ciudad *
-                </label>
+                <Label text="Ciudad" required />
                 <Input
                   type="text"
                   name="city"
                   value={formData.city}
                   onChange={handleChange}
                   placeholder="Montevideo"
-                  required
-                  className="w-full"
+                  className={`${errors.city ? errorRing : inputRing} w-full mt-1`}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-text-primary mb-1">
-                  Departamento *
-                </label>
+                <Label text="Departamento" required />
                 <Input
                   type="text"
                   name="state"
                   value={formData.state}
                   onChange={handleChange}
                   placeholder="Montevideo"
-                  required
-                  className="w-full"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-text-primary mb-1">
-                  Código Postal *
-                </label>
-                <Input
-                  type="text"
-                  name="zipCode"
-                  value={formData.zipCode}
-                  onChange={handleChange}
-                  placeholder="11000"
-                  required
-                  className="w-full"
+                  className={`${errors.state ? errorRing : inputRing} w-full mt-1`}
                 />
               </div>
             </div>
 
-            <div className="flex gap-3 pt-4">
+            <div>
+              <Label text="Teléfono" required />
+              <Input
+                type="text"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                placeholder="09X XXX XXX"
+                className={`${errors.phone ? errorRing : inputRing} w-full mt-1`}
+              />
+              {errors.phone && (
+                <p className="text-xs text-red-500 mt-1">
+                  Ingresá un teléfono válido de 9 dígitos
+                </p>
+              )}
+            </div>
+
+            <div className="flex gap-3 pt-4 border-t border-border">
               <Button
                 type="button"
                 variant="outline"
                 onClick={onClose}
                 className="flex-1"
-                disabled={loading}
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
+                variant="default"
                 className="flex-1"
-                disabled={loading}
               >
-                {loading ? 'Guardando...' : address ? 'Actualizar' : 'Agregar'}
+                {address ? 'Actualizar' : 'Agregar'}
               </Button>
             </div>
           </form>

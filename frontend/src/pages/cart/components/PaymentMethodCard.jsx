@@ -1,19 +1,17 @@
 import React, { useState, useEffect } from "react";
 import Button from "../../../components/ui/Button";
-import Input from "../../../components/ui/Input";
 import Icon from "../../../components/AppIcon";
+import CardModal from "../../../components/ui/CardModal";
 import { useAuth } from "context/AuthContext";
 
 const PaymentMethodCard = ({ selectedMethod, onMethodChange }) => {
   const { user } = useAuth();
 
   const [cards, setCards] = useState([]);
-  const [showCardForm, setShowCardForm] = useState(false);
-  const [form, setForm] = useState({ number: "", holder: "", expiry: "", cvv: "" });
-  const [errors, setErrors] = useState({});
-  const [successMessage, setSuccessMessage] = useState("");
+  const [showCardModal, setShowCardModal] = useState(false);
+  const [editingCard, setEditingCard] = useState(null);
   const [selectedCard, setSelectedCard] = useState(null);
-  const [showCVV, setShowCVV] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const getCardsKey = () => {
     const email = user?.email || "guest";
@@ -49,82 +47,53 @@ const PaymentMethodCard = ({ selectedMethod, onMethodChange }) => {
     return () => clearTimeout(t);
   }, [successMessage]);
 
-  const formatCardNumber = (value) => {
-    const digits = value.replace(/\D/g, "");
-    const trimmed = digits.slice(0, 16);
-    return trimmed.replace(/(\d{4})(?=\d)/g, "$1 ").trim();
-  };
-
-  const validateInput = (name, value) => {
-    let regex;
-    switch (name) {
-      case "number":
-        regex = /^[0-9 ]*$/;
-        break;
-      case "holder":
-        regex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ ]*$/;
-        break;
-      case "expiry":
-        regex = /^[0-9/]*$/;
-        break;
-      case "cvv":
-        regex = /^[0-9]*$/;
-        break;
-      default:
-        regex = /^[^<>%$#@!^*{}[\]\\|]*$/;
-    }
-    return regex.test(value);
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    if (!validateInput(name, value)) return;
-
-    let formatted = value;
-    if (name === "number") formatted = formatCardNumber(value);
-    if (name === "expiry") {
-      formatted = value
-        .replace(/[^0-9/]/g, "")
-        .slice(0, 5)
-        .replace(/^(\d{2})(\d)/, "$1/$2");
-    }
-
-    setForm((prev) => ({ ...prev, [name]: formatted }));
-    if (formatted.trim() !== "") setErrors((prev) => ({ ...prev, [name]: false }));
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-    if (form.number.replace(/\s/g, "").length !== 16) newErrors.number = true;
-    if (!form.holder.trim()) newErrors.holder = true;
-    if (!/^\d{2}\/\d{2}$/.test(form.expiry)) newErrors.expiry = true;
-    if (form.cvv.length !== 3) newErrors.cvv = true;
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSaveCard = () => {
-    if (!validateForm()) {
-      setSuccessMessage("Verificá que todos los campos estén completos y válidos.");
-      return;
-    }
-
-    const newCard = { id: Date.now(), ...form };
-    const updated = [...cards, newCard];
-    setCards(updated);
-
+  const handleSaveCard = (cardData) => {
     const cardsKey = getCardsKey();
-    localStorage.setItem(cardsKey, JSON.stringify(updated));
 
-    setSelectedCard(newCard.id);
-    setShowCardForm(false);
-    setForm({ number: "", holder: "", expiry: "", cvv: "" });
-    setErrors({});
-    setSuccessMessage("Tarjeta guardada correctamente.");
+    if (editingCard) {
+      const updated = cards.map((card) =>
+        card.id === editingCard.id 
+          ? { 
+              ...cardData, 
+              id: editingCard.id,
+              number: cardData.number || editingCard.number,
+              cardNumber: cardData.cardNumber || editingCard.cardNumber
+            } 
+          : card
+      );
+      setCards(updated);
+      localStorage.setItem(cardsKey, JSON.stringify(updated));
+      
+      if (selectedCard === editingCard.id) {
+        setSelectedCard(editingCard.id);
+      }
+      
+      setSuccessMessage("Tarjeta actualizada correctamente.");
+    } else {
+      const newCard = { 
+        ...cardData, 
+        id: Date.now(),
+        number: cardData.cardNumber || cardData.number,
+        holder: cardData.cardHolder || cardData.holder,
+        expiry: cardData.cardExpiry || cardData.expiry
+      };
+      const updated = [...cards, newCard];
+      setCards(updated);
+      localStorage.setItem(cardsKey, JSON.stringify(updated));
+      setSelectedCard(newCard.id);
+      setSuccessMessage("Tarjeta guardada correctamente.");
+    }
+
+    setShowCardModal(false);
+    setEditingCard(null);
     onMethodChange("card");
   };
 
   const handleDeleteCard = (id) => {
+    if (!window.confirm("¿Estás seguro de que querés eliminar esta tarjeta?")) {
+      return;
+    }
+
     const updated = cards.filter((c) => c.id !== id);
     setCards(updated);
 
@@ -132,21 +101,29 @@ const PaymentMethodCard = ({ selectedMethod, onMethodChange }) => {
     localStorage.setItem(cardsKey, JSON.stringify(updated));
 
     if (selectedCard === id) {
-      setSelectedCard(updated.length > 0 ? updated[updated.length - 1].id : null);
+      setSelectedCard(updated.length > 0 ? updated[0].id : null);
     }
+
+    setSuccessMessage("Tarjeta eliminada correctamente.");
   };
 
-  const inputRing =
-    "ring-1 ring-border focus:ring-2 focus:ring-primary/60 focus:border-primary/60 rounded-md transition-shadow";
-  const errorRing =
-    "ring-1 ring-red-500 focus:ring-2 focus:ring-red-400 focus:border-red-400 rounded-md transition-shadow";
+  const handleEditCard = (card) => {
+    setEditingCard(card);
+    setShowCardModal(true);
+  };
 
-  const Label = ({ text, required }) => (
-    <span className="font-medium text-text-primary">
-      {text}
-      {required && <span className="text-red-500 ml-0.5">*</span>}
-    </span>
-  );
+  const handleAddNewCard = () => {
+    setEditingCard(null);
+    setShowCardModal(true);
+  };
+
+  const getCardBrand = (number) => {
+    const numStr = String(number).replace(/\s/g, '');
+    if (numStr.startsWith('4')) return 'Visa';
+    if (numStr.startsWith('5')) return 'Mastercard';
+    if (numStr.startsWith('3')) return 'Amex';
+    return 'Tarjeta';
+  };
 
   const paymentMethods = [
     { id: "card", title: "Tarjeta", icon: "CreditCard" },
@@ -154,182 +131,165 @@ const PaymentMethodCard = ({ selectedMethod, onMethodChange }) => {
   ];
 
   return (
-    <div className="bg-card rounded-lg border border-border p-6 shadow-warm">
-      <h3 className="text-lg font-semibold text-text-primary mb-4">Método de pago</h3>
+    <>
+      <div className="bg-card rounded-lg border border-border p-6 shadow-warm">
+        <h3 className="text-lg font-semibold text-text-primary mb-4">
+          Método de pago
+        </h3>
 
-      {/* Métodos */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        {paymentMethods.map((method) => (
-          <div
-            key={method.id}
-            className={`p-4 rounded-lg border-2 cursor-pointer transition-warm ${
-              selectedMethod === method.id
-                ? "border-primary bg-primary/5"
-                : "border-border hover:border-primary/50"
-            }`}
-            onClick={() => {
-              onMethodChange(method.id);
-              setSuccessMessage("");
-            }}
-          >
-            <div className="flex items-center space-x-3">
-              <div
-                className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                  selectedMethod === method.id
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
-                }`}
-              >
-                <Icon name={method.icon} size={20} />
-              </div>
-              <h4 className="font-medium text-text-primary">{method.title}</h4>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Tarjetas */}
-      {selectedMethod === "card" && (
-        <div className="space-y-4">
-          {successMessage && (
-            <p
-              className={`text-sm font-medium ${
-                successMessage.startsWith("⚠️")
-                  ? "text-red-500"
-                  : "text-green-600"
+        {/* Métodos */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          {paymentMethods.map((method) => (
+            <div
+              key={method.id}
+              className={`p-4 rounded-lg border-2 cursor-pointer transition-warm ${
+                selectedMethod === method.id
+                  ? "border-primary bg-primary/5"
+                  : "border-border hover:border-primary/50"
               }`}
-            >
-              {successMessage}
-            </p>
-          )}
-
-          {cards.length > 0 && (
-            <>
-              <h4 className="font-medium text-text-primary mb-2">Tus tarjetas</h4>
-              {cards.map((card) => (
-                <div
-                  key={card.id}
-                  onClick={() => setSelectedCard(card.id)}
-                  className={`p-3 bg-background rounded-lg border-2 cursor-pointer transition-all duration-200 flex justify-between items-center ${
-                    selectedCard === card.id
-                      ? "border-primary bg-primary/5 shadow-sm"
-                      : "border-border hover:border-primary/40"
-                  }`}
-                >
-                  <div>
-                    <p className="font-medium text-text-primary">
-                      •••• {card.number.slice(-4)}
-                    </p>
-                    <p className="text-sm text-text-secondary">
-                      {card.holder} • Vence {card.expiry}
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="xs"
-                    iconName="Trash"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteCard(card.id);
-                    }}
-                  />
-                </div>
-              ))}
-            </>
-          )}
-
-          {!showCardForm && (
-            <Button
-              variant="outline"
-              size="sm"
-              iconName="Plus"
               onClick={() => {
-                setShowCardForm(true);
+                onMethodChange(method.id);
                 setSuccessMessage("");
               }}
             >
-              Agregar nueva tarjeta
-            </Button>
-          )}
-
-          {showCardForm && (
-            <div className="space-y-3 p-4 bg-background rounded-lg border border-border mt-3">
-              <h5 className="font-medium text-text-primary">Nueva tarjeta</h5>
-
-              <Input
-                label={<Label text="Número de tarjeta" required />}
-                name="number"
-                placeholder="1111 2222 3333 4444"
-                value={form.number}
-                onChange={handleInputChange}
-                className={errors.number ? errorRing : inputRing}
-              />
-
-              <Input
-                label={<Label text="Titular" required />}
-                name="holder"
-                placeholder="Nombre del titular"
-                value={form.holder}
-                onChange={handleInputChange}
-                className={errors.holder ? errorRing : inputRing}
-              />
-
-              <Input
-                label={<Label text="Fecha de vencimiento (MM/AA)" required />}
-                name="expiry"
-                placeholder="12/28"
-                value={form.expiry}
-                onChange={handleInputChange}
-                className={errors.expiry ? errorRing : inputRing}
-              />
-
-              <div className="relative">
-                <Input
-                  type={showCVV ? "text" : "password"}
-                  label={<Label text="CVV" required />}
-                  name="cvv"
-                  placeholder="•••"
-                  maxLength={3}
-                  value={form.cvv}
-                  onChange={handleInputChange}
-                  className={`${errors.cvv ? errorRing : inputRing} pr-10`}
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 bottom-2.5 text-text-secondary hover:text-text-primary"
-                  onClick={() => setShowCVV((prev) => !prev)}
+              <div className="flex items-center space-x-3">
+                <div
+                  className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                    selectedMethod === method.id
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted"
+                  }`}
                 >
-                  <Icon name={showCVV ? "EyeOff" : "Eye"} size={18} />
-                </button>
-              </div>
-
-              <div className="flex space-x-3">
-                <Button variant="default" size="sm" onClick={handleSaveCard}>
-                  Guardar
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setShowCardForm(false);
-                    setErrors({});
-                    setSuccessMessage("");
-                  }}
-                >
-                  Cancelar
-                </Button>
+                  <Icon name={method.icon} size={20} />
+                </div>
+                <h4 className="font-medium text-text-primary">{method.title}</h4>
               </div>
             </div>
-          )}
+          ))}
         </div>
-      )}
 
-      {selectedMethod === "cash" && (
-        <div className="p-4 bg-background rounded-lg border border-border">
-          <p className="text-sm text-text-secondary">Abonás al recibir el pedido.</p>
-        </div>
-      )}
-    </div>
+        {/* Tarjetas */}
+        {selectedMethod === "card" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium text-text-primary">Tus tarjetas</h4>
+              <Button
+                variant="default"
+                size="sm"
+                iconName="Plus"
+                onClick={handleAddNewCard}
+              >
+                Agregar nueva
+              </Button>
+            </div>
+
+            {successMessage && (
+              <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-sm font-medium text-green-700 flex items-center gap-2">
+                  <Icon name="CheckCircle" size={16} />
+                  {successMessage}
+                </p>
+              </div>
+            )}
+
+            {cards.length > 0 ? (
+              <div className="space-y-3">
+                {cards.map((card) => (
+                  <div
+                    key={card.id}
+                    onClick={() => setSelectedCard(card.id)}
+                    className={`p-4 bg-background rounded-lg border-2 cursor-pointer transition-all duration-200 ${
+                      selectedCard === card.id
+                        ? "border-primary bg-primary/5 shadow-sm"
+                        : "border-border hover:border-primary/40"
+                    }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Icon 
+                            name={selectedCard === card.id ? "CheckCircle" : "CreditCard"} 
+                            size={16} 
+                            className={selectedCard === card.id ? "text-primary" : "text-text-secondary"}
+                          />
+                          <p className="font-medium text-text-primary">
+                            {getCardBrand(card.number || card.cardNumber)} •••• {String(card.number || card.cardNumber).slice(-4)}
+                          </p>
+                        </div>
+                        <p className="text-sm text-text-secondary">
+                          {card.holder || card.cardHolder}
+                        </p>
+                        <p className="text-sm text-text-secondary">
+                          Vence {card.expiry || card.cardExpiry}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 ml-2">
+                        <Button
+                          variant="ghost"
+                          size="xs"
+                          iconName="Edit"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditCard(card);
+                          }}
+                          title="Editar tarjeta"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="xs"
+                          iconName="Trash"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteCard(card.id);
+                          }}
+                          title="Eliminar tarjeta"
+                          className="text-destructive hover:bg-destructive/10"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 bg-background rounded-lg border border-border">
+                <Icon name="CreditCard" size={48} className="text-text-secondary mx-auto mb-3" />
+                <p className="text-sm text-text-secondary mb-4">
+                  No hay tarjetas guardadas.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {selectedMethod === "cash" && (
+          <div className="p-4 bg-background rounded-lg border border-border">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                <Icon name="Wallet" size={20} className="text-text-secondary" />
+              </div>
+              <div>
+                <p className="font-medium text-text-primary mb-1">Pago en efectivo</p>
+                <p className="text-sm text-text-secondary">
+                  Abonás al recibir el pedido.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Modal de Tarjeta */}
+      <CardModal
+        isOpen={showCardModal}
+        onClose={() => {
+          setShowCardModal(false);
+          setEditingCard(null);
+        }}
+        onSave={handleSaveCard}
+        card={editingCard}
+        userEmail={user?.email}
+      />
+    </>
   );
 };
 
