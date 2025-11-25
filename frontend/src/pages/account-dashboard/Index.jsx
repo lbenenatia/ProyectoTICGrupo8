@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from 'context/AuthContext';
 import { useCart } from 'context/CartContext';
+import { useToast } from '../../context/ToastContext';
 import Header from '../../components/ui/Header';
 import ProfileCard from './components/ProfileCard';
 import RecentOrders from './components/RecentOrders';
@@ -15,10 +16,9 @@ import Icon from '../../components/AppIcon';
 const AccountDashboard = () => {
   const { user } = useAuth();
   const { favorites, removeFromFavorites, addToCart } = useCart();
+  const { showToast } = useToast();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState('overview');
-  const [addresses, setAddresses] = useState([]);
-  const [cards, setCards] = useState([]);
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [isCardModalOpen, setIsCardModalOpen] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState(null);
@@ -29,25 +29,6 @@ const AccountDashboard = () => {
       setActiveTab(location.state.defaultTab);
     }
   }, [location.state]);
-
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (!user?.email) return;
-
-      try {
-        const response = await fetch(`http://localhost:4028/api/user/${user.email}`);
-        if (response.ok) {
-          const data = await response.json();
-          setAddresses(data.addresses || []);
-          setCards(data.cards || []);
-        }
-      } catch (error) {
-        console.error('Error al cargar datos del usuario:', error);
-      }
-    };
-
-    fetchUserData();
-  }, [user]);
 
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
@@ -91,11 +72,13 @@ const AccountDashboard = () => {
     };
 
     addToCart(cartItem);
+    showToast("✅ Producto agregado al carrito");
   };
 
   const handleRemoveFavorite = (itemId) => {
     if (window.confirm('¿Estás seguro de que querés eliminar este favorito?')) {
       removeFromFavorites(itemId);
+      showToast("🗑️ Favorito eliminado");
     }
   };
 
@@ -117,6 +100,18 @@ const AccountDashboard = () => {
     }
   };
 
+  // ✅ Helpers para localStorage
+  const getAddressesKey = () => {
+    const email = user?.email || "guest";
+    return `addresses_${email}`;
+  };
+
+  const getCardsKey = () => {
+    const email = user?.email || "guest";
+    return `savedCards_${email}`;
+  };
+
+  // ✅ ADDRESS HANDLERS
   const handleAddAddress = () => {
     setSelectedAddress(null);
     setIsAddressModalOpen(true);
@@ -127,30 +122,44 @@ const AccountDashboard = () => {
     setIsAddressModalOpen(true);
   };
 
-  const handleDeleteAddress = async (addressId) => {
-    if (!window.confirm('¿Estás seguro de que querés eliminar esta dirección?')) return;
-
+  const handleSaveAddress = (addressData) => {
+    const addressesKey = getAddressesKey();
+    const saved = localStorage.getItem(addressesKey);
+    let addresses = [];
+    
     try {
-      const response = await fetch(`http://localhost:4028/api/user/addresses/${addressId}`, {
-        method: 'DELETE'
-      });
-
-      if (response.ok) {
-        setAddresses(addresses.filter(a => a.id !== addressId));
-      }
-    } catch (error) {
-      console.error('Error al eliminar dirección:', error);
+      addresses = saved ? JSON.parse(saved) : [];
+    } catch {
+      addresses = [];
     }
-  };
 
-  const handleSaveAddress = (savedAddress) => {
     if (selectedAddress) {
-      setAddresses(addresses.map(a => a.id === savedAddress.id ? savedAddress : a));
+      // ✅ Actualizar dirección existente
+      const updated = addresses.map(a => 
+        a.id === selectedAddress.id ? { ...addressData, id: selectedAddress.id } : a
+      );
+      localStorage.setItem(addressesKey, JSON.stringify(updated));
+      showToast("✅ Dirección actualizada correctamente");
     } else {
-      setAddresses([...addresses, savedAddress]);
+      // ✅ Agregar nueva dirección
+      const newAddress = { ...addressData, id: Date.now() };
+      const updated = [...addresses, newAddress];
+      localStorage.setItem(addressesKey, JSON.stringify(updated));
+      showToast("✅ Dirección guardada correctamente");
     }
+
+    // ✅ Cerrar modal
+    setIsAddressModalOpen(false);
+    setSelectedAddress(null);
+    
+    // ✅ Trigger storage event para sincronizar
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: addressesKey,
+      newValue: localStorage.getItem(addressesKey)
+    }));
   };
 
+  // ✅ CARD HANDLERS
   const handleAddCard = () => {
     setSelectedCard(null);
     setIsCardModalOpen(true);
@@ -161,28 +170,66 @@ const AccountDashboard = () => {
     setIsCardModalOpen(true);
   };
 
-  const handleDeleteCard = async (cardId) => {
-    if (!window.confirm('¿Estás seguro de que querés eliminar esta tarjeta?')) return;
-
+  const handleSaveCard = (cardData) => {
+    const cardsKey = getCardsKey();
+    const saved = localStorage.getItem(cardsKey);
+    let cards = [];
+    
     try {
-      const response = await fetch(`http://localhost:4028/api/user/cards/${cardId}`, {
-        method: 'DELETE'
-      });
-
-      if (response.ok) {
-        setCards(cards.filter(c => c.id !== cardId));
-      }
-    } catch (error) {
-      console.error('Error al eliminar tarjeta:', error);
+      cards = saved ? JSON.parse(saved) : [];
+    } catch {
+      cards = [];
     }
-  };
 
-  const handleSaveCard = (savedCard) => {
     if (selectedCard) {
-      setCards(cards.map(c => c.id === savedCard.id ? savedCard : c));
+      // ✅ Actualizar tarjeta existente
+      const updated = cards.map(c => 
+        c.id === selectedCard.id 
+          ? { 
+              ...cardData, 
+              id: selectedCard.id,
+              // Mantener el número si no se proporcionó uno nuevo
+              number: cardData.number || cardData.cardNumber || selectedCard.number || selectedCard.cardNumber,
+              cardNumber: cardData.cardNumber || cardData.number || selectedCard.cardNumber || selectedCard.number,
+              holder: cardData.holder || cardData.cardHolder,
+              cardHolder: cardData.cardHolder || cardData.holder,
+              expiry: cardData.expiry || cardData.cardExpiry,
+              cardExpiry: cardData.cardExpiry || cardData.expiry,
+              cvv: cardData.cvv || cardData.cardCVV,
+              cardCVV: cardData.cardCVV || cardData.cvv
+            } 
+          : c
+      );
+      localStorage.setItem(cardsKey, JSON.stringify(updated));
+      showToast("✅ Tarjeta actualizada correctamente");
     } else {
-      setCards([...cards, savedCard]);
+      // ✅ Agregar nueva tarjeta
+      const newCard = { 
+        ...cardData, 
+        id: Date.now(),
+        number: cardData.cardNumber || cardData.number,
+        cardNumber: cardData.cardNumber || cardData.number,
+        holder: cardData.cardHolder || cardData.holder,
+        cardHolder: cardData.cardHolder || cardData.holder,
+        expiry: cardData.cardExpiry || cardData.expiry,
+        cardExpiry: cardData.cardExpiry || cardData.expiry,
+        cvv: cardData.cardCVV || cardData.cvv,
+        cardCVV: cardData.cardCVV || cardData.cvv
+      };
+      const updated = [...cards, newCard];
+      localStorage.setItem(cardsKey, JSON.stringify(updated));
+      showToast("✅ Tarjeta guardada correctamente");
     }
+
+    // ✅ Cerrar modal
+    setIsCardModalOpen(false);
+    setSelectedCard(null);
+    
+    // ✅ Trigger storage event para sincronizar
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: cardsKey,
+      newValue: localStorage.getItem(cardsKey)
+    }));
   };
 
   const renderTabContent = () => {
@@ -206,16 +253,12 @@ const AccountDashboard = () => {
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <AddressesCard
-                addresses={addresses}
                 onEditAddress={handleEditAddress}
                 onAddAddress={handleAddAddress}
-                onDeleteAddress={handleDeleteAddress}
               />
               <CardsInfo
-                cards={cards}
                 onEditCard={handleEditCard}
                 onAddCard={handleAddCard}
-                onDeleteCard={handleDeleteCard}
               />
             </div>
           </div>
@@ -291,18 +334,22 @@ const AccountDashboard = () => {
       {/* Modales */}
       <AddressModal
         isOpen={isAddressModalOpen}
-        onClose={() => setIsAddressModalOpen(false)}
+        onClose={() => {
+          setIsAddressModalOpen(false);
+          setSelectedAddress(null);
+        }}
         onSave={handleSaveAddress}
         address={selectedAddress}
-        userEmail={user?.email}
       />
 
       <CardModal
         isOpen={isCardModalOpen}
-        onClose={() => setIsCardModalOpen(false)}
+        onClose={() => {
+          setIsCardModalOpen(false);
+          setSelectedCard(null);
+        }}
         onSave={handleSaveCard}
         card={selectedCard}
-        userEmail={user?.email}
       />
     </div>
   );
