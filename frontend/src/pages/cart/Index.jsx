@@ -215,26 +215,6 @@ const CartPage = () => {
     console.log('Modificar antes de volver a pedir:', order);
   };
 
-<<<<<<< HEAD
-  const handleRemoveItem = (itemId) => {
-    removeFromCart(itemId);
-  };
-
-  const handleModifyItem = (itemId) => {
-    const itemToEdit = cartItems.find(item => item.id === itemId);
-    if (itemToEdit) {
-      if (itemToEdit.customProduct) {
-        const customData = itemToEdit.customProduct.customData;
-        localStorage.setItem("itemToEdit", JSON.stringify({
-          ...itemToEdit.customProduct,
-          editMode: true,
-          originalItemId: itemId
-        }));
-        navigate(`/customize?product=${customData.type}&edit=true`);
-      } else {
-        navigate(`/product/${itemToEdit.product.id}?edit=true`);
-      }
-=======
   const handleModifyItem = (itemId) => {
     const itemToEdit = cartItems.find(item => item.id === itemId);
     if (!itemToEdit) {
@@ -274,7 +254,6 @@ const CartPage = () => {
     } else {
       console.log('✏️ Editando producto regular:', itemToEdit);
       navigate(`/product/${itemToEdit.product?.id}?edit=true`);
->>>>>>> a082518b0d583b3019bfc7b09b9cd6b7cbd05347
     }
   };
 

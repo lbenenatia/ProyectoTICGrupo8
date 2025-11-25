@@ -20,12 +20,9 @@ const AccountDashboard = () => {
   const location = useLocation();
 
   const [activeTab, setActiveTab] = useState('overview');
-<<<<<<< HEAD
   const [addresses, setAddresses] = useState([]);
   const [cards, setCards] = useState([]);
 
-=======
->>>>>>> a082518b0d583b3019bfc7b09b9cd6b7cbd05347
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [isCardModalOpen, setIsCardModalOpen] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState(null);
@@ -39,7 +36,6 @@ const AccountDashboard = () => {
     }
   }, [location.state]);
 
-<<<<<<< HEAD
   // Cargar datos del usuario (direcciones y tarjetas)
   useEffect(() => {
     const fetchUserData = async () => {
@@ -69,8 +65,6 @@ const AccountDashboard = () => {
       .catch(err => console.error("Error cargando pedidos del usuario:", err));
   }, [user]);
 
-=======
->>>>>>> a082518b0d583b3019bfc7b09b9cd6b7cbd05347
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
@@ -125,8 +119,6 @@ const AccountDashboard = () => {
     return `addresses_${email}`;
   };
 
-<<<<<<< HEAD
-=======
   const getCardsKey = () => {
     const email = user?.email || "guest";
     return `savedCards_${email}`;
@@ -253,7 +245,6 @@ const AccountDashboard = () => {
     }));
   };
 
->>>>>>> a082518b0d583b3019bfc7b09b9cd6b7cbd05347
   const renderTabContent = () => {
     switch (activeTab) {
       case 'overview':
@@ -275,7 +266,6 @@ const AccountDashboard = () => {
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <AddressesCard
-<<<<<<< HEAD
                 addresses={addresses}
                 onEditAddress={setSelectedAddress}
                 onAddAddress={() => setIsAddressModalOpen(true)}
@@ -286,14 +276,6 @@ const AccountDashboard = () => {
                 onEditCard={setSelectedCard}
                 onAddCard={() => setIsCardModalOpen(true)}
                 onDeleteCard={(id) => setCards(cards.filter(c => c.id !== id))}
-=======
-                onEditAddress={handleEditAddress}
-                onAddAddress={handleAddAddress}
-              />
-              <CardsInfo
-                onEditCard={handleEditCard}
-                onAddCard={handleAddCard}
->>>>>>> a082518b0d583b3019bfc7b09b9cd6b7cbd05347
               />
             </div>
           </div>
@@ -309,22 +291,7 @@ const AccountDashboard = () => {
           />
         );
       default:
-<<<<<<< HEAD
         return null;
-=======
-        return (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <RecentOrders />
-              <FavoriteItems
-                favorites={favorites}
-                onAddToCart={handleAddToCart}
-                onRemoveFavorite={handleRemoveFavorite}
-              />
-            </div>
-          </div>
-        );
->>>>>>> a082518b0d583b3019bfc7b09b9cd6b7cbd05347
     }
   };
 
@@ -364,31 +331,21 @@ const AccountDashboard = () => {
 
       <AddressModal
         isOpen={isAddressModalOpen}
-<<<<<<< HEAD
-        onClose={() => setIsAddressModalOpen(false)}
-        onSave={() => {}}
-=======
         onClose={() => {
           setIsAddressModalOpen(false);
           setSelectedAddress(null);
         }}
         onSave={handleSaveAddress}
->>>>>>> a082518b0d583b3019bfc7b09b9cd6b7cbd05347
         address={selectedAddress}
       />
 
       <CardModal
         isOpen={isCardModalOpen}
-<<<<<<< HEAD
-        onClose={() => setIsCardModalOpen(false)}
-        onSave={() => {}}
-=======
         onClose={() => {
           setIsCardModalOpen(false);
           setSelectedCard(null);
         }}
         onSave={handleSaveCard}
->>>>>>> a082518b0d583b3019bfc7b09b9cd6b7cbd05347
         card={selectedCard}
       />
     </div>
