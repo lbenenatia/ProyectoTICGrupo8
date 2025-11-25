@@ -4,13 +4,12 @@ import Icon from "../../../components/AppIcon";
 import CardModal from "../../../components/ui/CardModal";
 import { useAuth } from "context/AuthContext";
 
-const PaymentMethodCard = ({ selectedMethod, onMethodChange }) => {
+const PaymentMethodCard = ({ selectedMethod, onMethodChange, selectedCard, onCardSelect }) => {
   const { user } = useAuth();
 
   const [cards, setCards] = useState([]);
   const [showCardModal, setShowCardModal] = useState(false);
   const [editingCard, setEditingCard] = useState(null);
-  const [selectedCard, setSelectedCard] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
 
   const getCardsKey = () => {
@@ -28,16 +27,15 @@ const PaymentMethodCard = ({ selectedMethod, onMethodChange }) => {
         const parsed = JSON.parse(saved);
         setCards(parsed);
 
-        if (parsed.length > 0) {
-          setSelectedCard(parsed[parsed.length - 1].id);
+        // ✅ Si hay tarjetas y no hay una seleccionada, seleccionar la última
+        if (parsed.length > 0 && !selectedCard) {
+          onCardSelect && onCardSelect(parsed[parsed.length - 1].id);
         }
       } catch {
         setCards([]);
-        setSelectedCard(null);
       }
     } else {
       setCards([]);
-      setSelectedCard(null);
     }
   }, [user]);
 
@@ -65,7 +63,7 @@ const PaymentMethodCard = ({ selectedMethod, onMethodChange }) => {
       localStorage.setItem(cardsKey, JSON.stringify(updated));
       
       if (selectedCard === editingCard.id) {
-        setSelectedCard(editingCard.id);
+        onCardSelect && onCardSelect(editingCard.id);
       }
       
       setSuccessMessage("Tarjeta actualizada correctamente.");
@@ -80,7 +78,7 @@ const PaymentMethodCard = ({ selectedMethod, onMethodChange }) => {
       const updated = [...cards, newCard];
       setCards(updated);
       localStorage.setItem(cardsKey, JSON.stringify(updated));
-      setSelectedCard(newCard.id);
+      onCardSelect && onCardSelect(newCard.id);
       setSuccessMessage("Tarjeta guardada correctamente.");
     }
 
@@ -101,7 +99,8 @@ const PaymentMethodCard = ({ selectedMethod, onMethodChange }) => {
     localStorage.setItem(cardsKey, JSON.stringify(updated));
 
     if (selectedCard === id) {
-      setSelectedCard(updated.length > 0 ? updated[0].id : null);
+      const newSelected = updated.length > 0 ? updated[0].id : null;
+      onCardSelect && onCardSelect(newSelected);
     }
 
     setSuccessMessage("Tarjeta eliminada correctamente.");
@@ -115,6 +114,10 @@ const PaymentMethodCard = ({ selectedMethod, onMethodChange }) => {
   const handleAddNewCard = () => {
     setEditingCard(null);
     setShowCardModal(true);
+  };
+
+  const handleSelectCard = (cardId) => {
+    onCardSelect && onCardSelect(cardId);
   };
 
   const getCardBrand = (number) => {
@@ -197,7 +200,7 @@ const PaymentMethodCard = ({ selectedMethod, onMethodChange }) => {
                 {cards.map((card) => (
                   <div
                     key={card.id}
-                    onClick={() => setSelectedCard(card.id)}
+                    onClick={() => handleSelectCard(card.id)}
                     className={`p-4 bg-background rounded-lg border-2 cursor-pointer transition-all duration-200 ${
                       selectedCard === card.id
                         ? "border-primary bg-primary/5 shadow-sm"
@@ -256,6 +259,14 @@ const PaymentMethodCard = ({ selectedMethod, onMethodChange }) => {
                 <p className="text-sm text-text-secondary mb-4">
                   No hay tarjetas guardadas.
                 </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  iconName="Plus"
+                  onClick={handleAddNewCard}
+                >
+                  Agregar tu primera tarjeta
+                </Button>
               </div>
             )}
           </div>

@@ -10,6 +10,7 @@ import QuickReorderCard from './components/QuickReorderCard';
 import { useCart } from '../../context/CartContext';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from 'context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import ConfirmModal from "../../components/ui/ConfirmModal";
 
 const CartPage = () => {
@@ -17,9 +18,11 @@ const CartPage = () => {
   const [selectedDeliveryOption, setSelectedDeliveryOption] = useState('delivery');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('card');
   const [deliveryAddress, setDeliveryAddress] = useState(null);
+  const [selectedCard, setSelectedCard] = useState(null);
   const navigate = useNavigate();
 
   const { user } = useAuth();
+  const { showToast } = useToast();
 
   const {
     items: cartItems,
@@ -34,6 +37,7 @@ const CartPage = () => {
     updateQty
   } = useCart();
 
+  // ✅ Cargar dirección guardada
   useEffect(() => {
     if (!user?.email) return;
 
@@ -66,6 +70,26 @@ const CartPage = () => {
     setDeliveryAddress(null);
   }, [user]);
 
+  // ✅ Cargar tarjeta seleccionada
+  useEffect(() => {
+    if (!user?.email) return;
+
+    const userKey = user.email;
+    const cardsKey = `savedCards_${userKey}`;
+    const saved = localStorage.getItem(cardsKey);
+    
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.length > 0) {
+          setSelectedCard(parsed[parsed.length - 1].id);
+        }
+      } catch {
+        setSelectedCard(null);
+      }
+    }
+  }, [user]);
+
   const handleAddressChange = (newAddress) => {
     setDeliveryAddress(newAddress);
 
@@ -80,47 +104,9 @@ const CartPage = () => {
     }
   };
 
-  const [savedCards, setSavedCards] = useState(() => {
-    try {
-      const raw = localStorage.getItem('savedCards');
-      return raw
-        ? JSON.parse(raw)
-        : [
-            { id: 1, last4: "4242", brand: "Visa", expiry: "12/25" },
-            { id: 2, last4: "5555", brand: "Mastercard", expiry: "08/26" },
-          ];
-    } catch {
-      return [];
-    }
-  });
-
-  useEffect(() => {
-    localStorage.setItem('savedCards', JSON.stringify(savedCards));
-  }, [savedCards]);
-
-  const handleAddCard = () => {
-    const last4 = prompt("Ingresá los últimos 4 dígitos de la tarjeta:");
-    const brand = prompt("Marca (Visa, Mastercard, etc.):");
-    const expiry = prompt("Vencimiento (MM/AA):");
-
-    if (last4 && brand && expiry) {
-      const newCard = {
-        id: Date.now(),
-        last4,
-        brand,
-        expiry,
-      };
-      setSavedCards((prev) => [...prev, newCard]);
-      setSelectedPaymentMethod('card');
-      alert(`Tarjeta ${brand} **** ${last4} agregada correctamente `);
-    }
-  };
-
-  const handleSelectCard = (cardId) => {
-    setSelectedPaymentMethod('card');
-    setSavedCards((prev) =>
-      prev.map((c) => ({ ...c, selected: c.id === cardId }))
-    );
+  // ✅ Handler para cuando se selecciona una tarjeta
+  const handleCardSelect = (cardId) => {
+    setSelectedCard(cardId);
   };
 
   const calculateOrderTotals = () => {
@@ -131,9 +117,44 @@ const CartPage = () => {
 
   const { deliveryFee, total: totalOrder } = calculateOrderTotals();
 
+  // ✅ VALIDACIÓN COMPLETA ANTES DE HACER EL PEDIDO
+  const validateOrder = () => {
+    // Validar que hay items en el carrito
+    if (cartItems.length === 0) {
+      showToast("⚠️ Tu carrito está vacío");
+      return false;
+    }
+
+    // Validar opción de entrega
+    if (selectedDeliveryOption === 'delivery') {
+      if (!deliveryAddress) {
+        showToast("📍 Seleccioná un domicilio para continuar");
+        return false;
+      }
+    }
+
+    // Validar método de pago
+    if (selectedPaymentMethod === 'card') {
+      if (!selectedCard) {
+        showToast("💳 Seleccioná una tarjeta para continuar");
+        return false;
+      }
+    }
+
+    return true;
+  };
+
   const handlePlaceOrder = () => {
+    // ✅ Validar antes de hacer el pedido
+    if (!validateOrder()) {
+      return;
+    }
+
     const newOrder = placeOrder(selectedDeliveryOption);
-    if (newOrder) setActiveTab('tracking');
+    if (newOrder) {
+      showToast("✅ Pedido realizado exitosamente");
+      setActiveTab('tracking');
+    }
   };
 
   const handleCancelOrder = (orderId) => {
@@ -141,7 +162,7 @@ const CartPage = () => {
   };
 
   const handleContactDriver = (driver) => {
-    alert(`Llamando al repartidor ${driver.name} (${driver.vehicle}) 🚗`);
+    showToast(`📞 Llamando a ${driver.name}`);
   };
 
   const handleReorder = (order) => {
@@ -149,6 +170,7 @@ const CartPage = () => {
       addToCart(i.product, { size: i.size, ingredients: i.ingredients }, i.qty)
     );
     setActiveTab('new-order');
+    showToast("✅ Productos agregados al carrito");
   };
 
   const handleModifyAndReorder = (order) => {
@@ -221,6 +243,7 @@ const CartPage = () => {
       removeFromCart(itemToRemove.id);
       setShowConfirm(false);
       setItemToRemove(null);
+      showToast("🗑️ Producto eliminado del carrito");
     }
   };
 
@@ -232,6 +255,22 @@ const CartPage = () => {
   const getItemName = (item) => {
     if (!item) return 'este producto';
     return item.customProduct?.name || item.name || item.product?.name || 'este producto';
+  };
+
+  // ✅ Calcular si el botón de "Hacer pedido" debe estar deshabilitado
+  const isOrderButtonDisabled = useMemo(() => {
+    if (cartItems.length === 0) return true;
+    if (selectedDeliveryOption === 'delivery' && !deliveryAddress) return true;
+    if (selectedPaymentMethod === 'card' && !selectedCard) return true;
+    return false;
+  }, [cartItems.length, selectedDeliveryOption, deliveryAddress, selectedPaymentMethod, selectedCard]);
+
+  // ✅ Mensaje dinámico para el tooltip del botón
+  const getOrderButtonTooltip = () => {
+    if (cartItems.length === 0) return "Agregá productos al carrito";
+    if (selectedDeliveryOption === 'delivery' && !deliveryAddress) return "Seleccioná un domicilio";
+    if (selectedPaymentMethod === 'card' && !selectedCard) return "Seleccioná una tarjeta";
+    return "";
   };
 
   return (
@@ -292,9 +331,8 @@ const CartPage = () => {
                   <PaymentMethodCard
                     selectedMethod={selectedPaymentMethod}
                     onMethodChange={setSelectedPaymentMethod}
-                    savedCards={savedCards}
-                    onAddCard={handleAddCard}
-                    onSelectCard={handleSelectCard}
+                    selectedCard={selectedCard}
+                    onCardSelect={handleCardSelect}
                   />
                 </div>
 
@@ -309,17 +347,27 @@ const CartPage = () => {
                     onRemoveItem={handleRemoveItem}
                   />
 
-                  <Button
-                    variant="default"
-                    size="lg"
-                    fullWidth
-                    iconName="CreditCard"
-                    iconPosition="left"
-                    onClick={handlePlaceOrder}
-                    disabled={cartItems.length === 0}
-                  >
-                    Hacer pedido - ${totalOrder.toFixed(2)}
-                  </Button>
+                  <div className="relative">
+                    <Button
+                      variant="default"
+                      size="lg"
+                      fullWidth
+                      iconName="CreditCard"
+                      iconPosition="left"
+                      onClick={handlePlaceOrder}
+                      disabled={isOrderButtonDisabled}
+                      title={getOrderButtonTooltip()}
+                    >
+                      Hacer pedido - ${totalOrder.toFixed(2)}
+                    </Button>
+                    
+                    {/* ✅ Indicador visual de qué falta */}
+                    {isOrderButtonDisabled && cartItems.length > 0 && (
+                      <div className="mt-2 text-xs text-center text-text-secondary">
+                        {getOrderButtonTooltip()}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
