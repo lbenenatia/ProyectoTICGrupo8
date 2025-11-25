@@ -23,7 +23,9 @@ const BuildYourOwn = () => {
   const { addToCart, removeFromCart } = useCart();
   const [productToAdd, setProductToAdd] = useState(null);
 
+  // ✅ NUEVO: useEffect para seleccionar tamaño por defecto en pedidos nuevos
   useEffect(() => {
+    // Solo aplicar si NO estamos en modo edición
     if (!isEditMode && selectedType && selectedSize === 'null') {
       const defaultSize = selectedType === 'pizza' ? 'small' : 'single';
       console.log(`🎯 Seleccionando tamaño por defecto: ${defaultSize} para ${selectedType}`);
@@ -31,6 +33,7 @@ const BuildYourOwn = () => {
     }
   }, [selectedType, isEditMode, selectedSize]);
 
+  // ✅ FUNCIÓN MEJORADA - Ahora busca por ID primero, luego por nombre como fallback
   const applyEditData = useCallback((data) => {
     console.log("🔄 APPLY EDIT DATA llamado con:", data);
     if (!data) return;
@@ -43,6 +46,7 @@ const BuildYourOwn = () => {
     let ingredientsToSet = {};
     let extrasToSet = {};
     
+    // ✅ BUSCAR INGREDIENTES POR ID (PRIMERO) Y LUEGO POR NOMBRE (FALLBACK)
     if (data.selectedIngredients && Array.isArray(data.selectedIngredients)) {
       console.log("🔍 Buscando ingredientes...");
       data.selectedIngredients.forEach(ingredient => {
@@ -51,12 +55,14 @@ const BuildYourOwn = () => {
         if (ingredient.category) {
           const categoryData = ingredientsData[ingredient.category] || [];
           
+          // ✅ BUSCAR POR ID PRIMERO (más confiable)
           let foundIngredient = null;
           if (ingredient.id) {
             foundIngredient = categoryData.find(item => item.id === ingredient.id);
             console.log(`Buscando por ID (${ingredient.id}):`, foundIngredient ? '✅ Encontrado' : '❌ No encontrado');
           }
           
+          // ✅ SI NO SE ENCUENTRA POR ID, BUSCAR POR NOMBRE (fallback)
           if (!foundIngredient && ingredient.name) {
             foundIngredient = categoryData.find(item => item.name === ingredient.name);
             console.log(`Buscando por nombre (${ingredient.name}):`, foundIngredient ? '✅ Encontrado' : '❌ No encontrado');
@@ -76,6 +82,7 @@ const BuildYourOwn = () => {
       });
     }
     
+    // ✅ BUSCAR EXTRAS POR ID (PRIMERO) Y LUEGO POR NOMBRE (FALLBACK)
     if (data.selectedExtras && Array.isArray(data.selectedExtras)) {
       console.log("🔍 Buscando extras...");
       data.selectedExtras.forEach(extra => {
@@ -84,12 +91,14 @@ const BuildYourOwn = () => {
         if (extra.category) {
           const categoryData = extrasData[extra.category] || [];
           
+          // ✅ BUSCAR POR ID PRIMERO (más confiable)
           let foundExtra = null;
           if (extra.id) {
             foundExtra = categoryData.find(item => item.id === extra.id);
             console.log(`Buscando extra por ID (${extra.id}):`, foundExtra ? '✅ Encontrado' : '❌ No encontrado');
           }
           
+          // ✅ SI NO SE ENCUENTRA POR ID, BUSCAR POR NOMBRE (fallback)
           if (!foundExtra && extra.name) {
             foundExtra = categoryData.find(item => item.name === extra.name);
             console.log(`Buscando extra por nombre (${extra.name}):`, foundExtra ? '✅ Encontrado' : '❌ No encontrado');
@@ -114,7 +123,7 @@ const BuildYourOwn = () => {
     
     setSelectedIngredients(ingredientsToSet);
     setSelectedExtras(extrasToSet);
-    setIsEditMode(false);
+    // ✅ NO desactivar isEditMode aquí - se mantiene hasta que se confirme el cambio
   }, [ingredientsData, extrasData]);
 
   useEffect(() => {
@@ -151,13 +160,16 @@ const BuildYourOwn = () => {
         Object.keys(ingredientsData).length > 0 && 
         Object.keys(extrasData).length > 0) {
       
+      // ✅ VERIFICAR QUE LOS DATOS CORRESPONDAN AL TIPO DE PRODUCTO CORRECTO
       const editIngredientCategories = editData.selectedIngredients?.map(ing => ing.category) || [];
       const availableCategories = Object.keys(ingredientsData);
       
+      // Verificar si al menos una categoría de ingredientes coincide
       const hasMatchingCategories = editIngredientCategories.some(cat => 
         availableCategories.includes(cat)
       );
       
+      // Si NO hay categorías coincidentes, significa que aún no se cargaron los datos correctos
       if (editIngredientCategories.length > 0 && !hasMatchingCategories) {
         console.log("⏳ Esperando datos correctos del tipo de producto...");
         console.log("Categorías necesarias:", editIngredientCategories);
@@ -184,6 +196,7 @@ const BuildYourOwn = () => {
     const productName = productToAdd.productType === 'pizza' ? 'Pizza' : 'Hamburguesa';
     const sizeName = productToAdd.sizeInfo?.nameEs || '';
     
+    // ✅ GUARDAR INGREDIENTES CON ID, CATEGORY, NAME Y PRICE
     const selectedItems = [];
     if (productToAdd.ingredientsData && productToAdd.selectedIngredients) {
       Object.entries(productToAdd.selectedIngredients).forEach(([category, ids]) => {
@@ -192,10 +205,10 @@ const BuildYourOwn = () => {
           const found = categoryIngredients.find((ing) => ing.id === id);
           if (found) {
             selectedItems.push({
-              id: found.id,
-              category,
-              name: found.name,
-              price: found.price || 0,
+              id: found.id,           // ✅ GUARDAR EL ID
+              category,               // ✅ GUARDAR LA CATEGORÍA
+              name: found.name,       // ✅ GUARDAR EL NOMBRE
+              price: found.price || 0, // ✅ GUARDAR EL PRECIO
               type: 'ingredient'
             });
           }
@@ -203,6 +216,7 @@ const BuildYourOwn = () => {
       });
     }
 
+    // ✅ GUARDAR EXTRAS CON ID, CATEGORY, NAME Y PRICE
     const selectedExtrasItems = [];
     if (productToAdd.extrasData && productToAdd.selectedExtras) {
       Object.entries(productToAdd.selectedExtras).forEach(([category, ids]) => {
@@ -211,10 +225,10 @@ const BuildYourOwn = () => {
           const found = categoryExtras.find((extra) => extra.id === id);
           if (found) {
             selectedExtrasItems.push({
-              id: found.id,
-              category,
-              name: found.name,
-              price: found.price || 0,
+              id: found.id,           // ✅ GUARDAR EL ID
+              category,               // ✅ GUARDAR LA CATEGORÍA
+              name: found.name,       // ✅ GUARDAR EL NOMBRE
+              price: found.price || 0, // ✅ GUARDAR EL PRECIO
               type: 'extra'
             });
           }
@@ -237,8 +251,8 @@ const BuildYourOwn = () => {
         type: productToAdd.productType,
         size: productToAdd.selectedSize,
         sizeInfo: productToAdd.sizeInfo,
-        ingredients: selectedItems,
-        extras: selectedExtrasItems,
+        ingredients: selectedItems,        // ✅ Ahora incluye id, category, name, price
+        extras: selectedExtrasItems,       // ✅ Ahora incluye id, category, name, price
         basePrice: productToAdd.basePrice,
         ingredientsPrice: productToAdd.ingredientsPrice,
         extrasPrice: productToAdd.extrasPrice,
@@ -253,7 +267,10 @@ const BuildYourOwn = () => {
     addToCart(item);
     setShowConfirmModal(false);
     setProductToAdd(null);
+    
+    // ✅ Limpiar estado de edición DESPUÉS de confirmar
     setEditData(null);
+    setIsEditMode(false);
     
     if (isEditing) {
       console.log("✅ Producto editado exitosamente - Redirigiendo al carrito");
@@ -266,16 +283,24 @@ const BuildYourOwn = () => {
   const handleCancelAddToCart = () => {
     setShowConfirmModal(false);
     setProductToAdd(null);
+    
+    // ✅ Si estaba editando y cancela, limpiar el estado de edición
+    if (isEditMode) {
+      setIsEditMode(false);
+      setEditData(null);
+    }
   };
 
   const handleTypeChange = (type) => {
     if (type === 'pizza') {
       setSelectedType('pizza');
+      // ✅ Si NO estamos editando, seleccionar tamaño por defecto
       if (!isEditMode) {
         setSelectedSize('small');
       }
     } else if (type === 'burger') {
       setSelectedType('burger');
+      // ✅ Si NO estamos editando, seleccionar tamaño por defecto
       if (!isEditMode) {
         setSelectedSize('single');
       }
