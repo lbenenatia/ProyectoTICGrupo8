@@ -53,10 +53,6 @@ const AccountDashboard = () => {
     console.log('Edit profile clicked');
   };
 
-  const handleViewOrderDetails = (orderId) => {
-    console.log('View order details for:', orderId);
-  };
-
   const handleAddToCart = (itemId) => {
     const favorite = favorites.find(fav => fav.id === itemId);
     if (!favorite) return;
@@ -79,24 +75,6 @@ const AccountDashboard = () => {
     if (window.confirm('¿Estás seguro de que querés eliminar este favorito?')) {
       removeFromFavorites(itemId);
       showToast("🗑️ Favorito eliminado");
-    }
-  };
-
-  const handleCustomizeItem = (itemId) => {
-    const favorite = favorites.find(fav => fav.id === itemId);
-    if (!favorite) return;
-
-    localStorage.setItem("editingFavorite", JSON.stringify({
-      ...favorite,
-      editMode: true
-    }));
-
-    if (favorite.customData?.type === 'pizza') {
-      window.location.href = '/customize?product=pizza&edit=true';
-    } else if (favorite.customData?.type === 'burger') {
-      window.location.href = '/customize?product=burger&edit=true';
-    } else {
-      window.location.href = '/customize';
     }
   };
 
@@ -243,7 +221,6 @@ const AccountDashboard = () => {
                 favorites={favorites}
                 onAddToCart={handleAddToCart}
                 onRemoveFavorite={handleRemoveFavorite}
-                onCustomize={handleCustomizeItem}
               />
             </div>
           </div>
@@ -273,7 +250,6 @@ const AccountDashboard = () => {
             favorites={favorites}
             onAddToCart={handleAddToCart}
             onRemoveFavorite={handleRemoveFavorite}
-            onCustomize={handleCustomizeItem}
           />
         );
       default:
@@ -285,7 +261,6 @@ const AccountDashboard = () => {
                 favorites={favorites}
                 onAddToCart={handleAddToCart}
                 onRemoveFavorite={handleRemoveFavorite}
-                onCustomize={handleCustomizeItem}
               />
             </div>
           </div>
