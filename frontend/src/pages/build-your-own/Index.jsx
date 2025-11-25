@@ -45,11 +45,64 @@ const BuildYourOwn = () => {
     }));
   };
 
-  const handleAddToCart = () => {
-    alert(
-      `Agregaste una ${selectedType || 'creación'} al carrito`
-    );
+const { addToCart } = useCart();
+
+const handleAddToCart = () => {
+  if (!selectedType || selectedSize === "null") {
+    alert("Debe seleccionar un tipo y tamaño.");
+    return;
+  }
+
+  // Convertir pizza/burger → enum del backend
+  const normalizedType =
+    selectedType === 'pizza' ? 'PIZZA' :
+    selectedType === 'burger' ? 'BURGER' :
+    'PIZZA';
+
+  // Aplanar ingredientes en una sola lista
+  const flatIngredients = Object.values(selectedIngredients).flat();
+
+  // Aplanar extras
+  const flatExtras = Object.values(selectedExtras).flat();
+
+  // Calcular precio base por tamaño (puedes ajustar si cambia)
+  const sizePrices = {
+    small: 25,
+    medium: 35,
+    large: 45
   };
+
+  const basePrice = sizePrices[selectedSize] || 25;
+
+  const ingredientCost = flatIngredients.reduce(
+    (sum, ing) => sum + (ing.price || 0), 0
+  );
+
+  const extrasCost = flatExtras.reduce(
+    (sum, ext) => sum + (ext.price || 0), 0
+  );
+
+  const totalPrice = basePrice + ingredientCost + extrasCost;
+
+  // Construir el producto personalizado
+  const customProduct = {
+    name: selectedType === "pizza" ? "Pizza Personalizada" : "Hamburguesa Personalizada",
+    size: selectedSize,
+    ingredients: [...flatIngredients, ...flatExtras],
+    price: totalPrice,
+    type: normalizedType   // ⭐ CLAVE ⭐ →
+                           // PIZZA / BURGER (aceptado por backend)
+  };
+
+  addToCart(customProduct, {}, 1);
+
+  alert("¡Personalización agregada al carrito!");
+
+  // reset opcional
+  // setSelectedIngredients({});
+  // setSelectedExtras({});
+};
+
 
 
   useEffect(() => {

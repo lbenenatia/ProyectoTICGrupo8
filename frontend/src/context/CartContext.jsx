@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 
+
+
 const CartContext = createContext(null);
 
 export const CartProvider = ({ children }) => {
@@ -164,49 +166,127 @@ export const CartProvider = ({ children }) => {
   };
 
   // --- PLACE ORDER ---
-  const placeOrder = (deliveryType = "delivery") => {
-    if (items.length === 0) return null;
+const placeOrder = async () => {
+  if (items.length === 0) return null;
 
-    const newOrder = {
-      id: `ORD-${Date.now()}`,
-      status: "preparing",
-      createdAt: new Date().toISOString(),
-      deliveryType,
-      items,
-      total,
-      driver: null,
-    };
+  // --- helpers para mapear a enums del backend ---
+const mapCreationType = (type) => {
+  if (!type) return "PIZZA";
 
-    setOrders((prev) => [...prev, newOrder]);
-    clearCart();
-    return newOrder;
+  const t = type.toString().toUpperCase();
+
+  if (t.includes("PIZZA")) return "PIZZA";
+  if (t.includes("BURGER")) return "BURGER";
+
+  if (t.includes("BOTH") || t.includes("COMBO")) return "BOTH";
+
+  return "PIZZA"; // fallback seguro
+};
+
+
+ 
+  const mapPaymentMethod = () => {
+    return "TARJETA"; 
   };
+
+  try {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user || !user.email) {
+      alert("Tenés que iniciar sesión antes de hacer un pedido.");
+      return null;
+    }
+
+    // 1) Crear pedido
+    const orderRes = await fetch(
+      `http://localhost:4028/api/orders/create/${user.email}`,
+      { method: "POST" }
+    );
+
+    if (!orderRes.ok) {
+      console.error("Error creando pedido (create):", orderRes.status);
+      alert("No se pudo crear el pedido.");
+      return null;
+    }
+
+    const order = await orderRes.json();
+
+    // 2) Agregar creaciones
+    for (const item of items) {
+      const productIds = item.ingredients?.map((i) => i.id) || [];
+
+      let rawType;
+
+      // Si es producto personalizado
+      if (item.customProduct) {
+        rawType = item.customProduct.type?.toUpperCase() || "PIZZA";
+      } else {
+        // Producto del menú
+        rawType = (item.product?.type || item.product?.category || "PIZZA").toUpperCase();
+      }
+
+      const typeEnum = mapCreationType(rawType);
+
+      const size = item.size || "MEDIUM";
+
+      const creationRes = await fetch(
+        `http://localhost:4028/api/orders/${order.id}/add-creation?type=${typeEnum}&size=${size}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(productIds),
+        }
+      );
+
+      if (!creationRes.ok) {
+        console.error(
+          "Error creando creación (add-creation):",
+          creationRes.status
+        );
+        alert("Hubo un error al agregar una creación al pedido.");
+        // si querés, acá podrías hacer un `return null;`
+      }
+    }
+
+    // 3) Generar ticket
+    const paymentEnum = mapPaymentMethod();
+
+    const ticketRes = await fetch(
+      `http://localhost:4028/api/orders/${order.id}/generate-ticket?method=${paymentEnum}`,
+      { method: "POST" }
+    );
+
+    if (!ticketRes.ok) {
+      console.error(
+        "Error generando ticket (generate-ticket):",
+        ticketRes.status
+      );
+      alert("Hubo un error generando el ticket.");
+      return null;
+    }
+
+    const ticket = await ticketRes.json();
+    console.log("Ticket generado:", ticket);
+
+    // 4) Guardar pedido local y vaciar carrito
+    setOrders((prev) => [...prev, order]);
+    clearCart();
+
+    return order;
+  } catch (err) {
+    console.error("Error creando pedido:", err);
+    alert("Hubo un error creando el pedido.");
+    return null;
+  }
+};
+
+
 
   // --- GET LAST FIVE ORDERS ---
   const getLastFiveOrders = () => {
     return [...orders].slice(-5).reverse();
   };
 
-  // --- SIMULATE ORDER STATUS UPDATES ---
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setOrders((prev) =>
-        prev.map((order) =>
-          order.status === "preparing"
-            ? {
-                ...order,
-                status: "out-for-delivery",
-                driver: { name: "Mike Johnson", vehicle: "Honda Civic - ABC 123" },
-              }
-            : order.status === "out-for-delivery"
-            ? { ...order, status: "delivered" }
-            : order
-        )
-      );
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, []);
+  
 
   // --- CART CALCULATIONS ---
   const { cartCount, subtotal, total } = useMemo(() => {
@@ -236,6 +316,31 @@ export const CartProvider = ({ children }) => {
     
     return { cartCount, subtotal, total };
   }, [items]);
+    // --- SYNC ORDER FROM BACKEND ---
+  
+  const syncOrderFromBackend = async (orderId) => {
+    try {
+      const response = await fetch(`http://localhost:4028/api/orders/${orderId}`);
+      if (!response.ok) {
+        console.warn("No se pudo refrescar el pedido:", response.status);
+        return;
+      }
+
+      const updatedOrder = await response.json();
+
+      // Actualizar estado global + localStorage
+      setOrders((prev) => {
+        const newOrders = prev.map((o) =>
+          o.id === orderId ? updatedOrder : o
+        );
+        localStorage.setItem("orders", JSON.stringify(newOrders));
+        return newOrders;
+      });
+
+    } catch (err) {
+      console.error("Error sincronizando pedido:", err);
+    }
+  };
 
   // --- CONTEXT VALUE ---
   const value = useMemo(
@@ -257,6 +362,7 @@ export const CartProvider = ({ children }) => {
       addToFavorites,
       removeFromFavorites,
       clearFavorites,
+      syncOrderFromBackend,
     }),
     [items, cartCount, subtotal, total, orders, favorites]
   );

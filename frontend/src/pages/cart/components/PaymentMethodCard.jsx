@@ -182,10 +182,11 @@ const PaymentMethodCard = ({ selectedMethod, onMethodChange }) => {
                 >
                   <div>
                     <p className="font-medium text-text-primary">
-                      •••• {card.number.slice(-4)}
+                      •••• {(card?.number || "").replace(/\s/g, "").slice(-4) || "????"}
                     </p>
+
                     <p className="text-sm text-text-secondary">
-                      {card.holder} • Vence {card.expiry}
+                      {(card?.holder || "Nombre desconocido")} • Vence {(card?.expiry || "--/--")}
                     </p>
                   </div>
                   <Button

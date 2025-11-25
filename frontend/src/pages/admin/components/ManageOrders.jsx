@@ -17,12 +17,30 @@ export default function ManageOrders() {
   };
 
   const cancelOrder = async (id) => {
-    await axios.put(
-      `http://localhost:4028/api/admin/orders/${id}/status?status=CANCELLED`,
-      {},
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    fetchOrders();
+    try {
+      await axios.put(
+        `http://localhost:4028/api/admin/orders/${id}/status?status=CANCELLED`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      fetchOrders();
+    } catch (err) {
+      console.error("Error canceling:", err);
+    }
+  };
+
+  const advanceOrder = async (id) => {
+    try {
+      await axios.put(
+        `http://localhost:4028/api/admin/orders/${id}/advance`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      fetchOrders();
+    } catch (err) {
+      console.error("Error advancing:", err);
+      alert("Este pedido no puede avanzar más.");
+    }
   };
 
   return (
@@ -37,7 +55,7 @@ export default function ManageOrders() {
             <th className="p-3 text-left">Usuario</th>
             <th className="p-3 text-left">Fecha</th>
             <th className="p-3 text-left">Estado</th>
-            <th className="p-3 text-left"></th>
+            <th className="p-3 text-left">Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -45,9 +63,22 @@ export default function ManageOrders() {
             <tr key={o.id} className="border-b dark:border-gray-700">
               <td className="p-3">{o.id}</td>
               <td className="p-3">{o.user?.email}</td>
-              <td className="p-3">{new Date(o.creationDate).toLocaleDateString()}</td>
-              <td className="p-3">{o.status}</td>
               <td className="p-3">
+                {new Date(o.creationDate).toLocaleDateString()}
+              </td>
+              <td className="p-3">{o.status}</td>
+              <td className="p-3 space-x-3">
+                {/* Botón avanzar */}
+                {o.status !== "RECEIVED" && o.status !== "CANCELLED" && (
+                  <button
+                    className="text-blue-600 hover:text-blue-700"
+                    onClick={() => advanceOrder(o.id)}
+                  >
+                    Avanzar
+                  </button>
+                )}
+
+                {/* Botón cancelar */}
                 {o.status !== "CANCELLED" && (
                   <button
                     className="text-orange-500 hover:text-orange-600"

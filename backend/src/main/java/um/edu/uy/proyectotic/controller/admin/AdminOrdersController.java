@@ -29,4 +29,21 @@ public class AdminOrdersController {
     o.setStatus(status);
     return ResponseEntity.ok(orderRepo.save(o));
   }
+  @PutMapping("/{orderId}/advance")
+  public ResponseEntity<PurchaseOrder> advanceStatus(@PathVariable Long orderId) {
+
+      PurchaseOrder o = orderRepo.findById(orderId)
+              .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
+
+      switch (o.getStatus()) {
+          case QUEUE -> o.setStatus(OrderStatus.PREPARING);
+          case PREPARING -> o.setStatus(OrderStatus.DELIVERING);
+          case DELIVERING -> o.setStatus(OrderStatus.RECEIVED);
+          default -> throw new RuntimeException("Este pedido ya no puede avanzar.");
+      }
+
+      return ResponseEntity.ok(orderRepo.save(o));
+  }
+
+
 }

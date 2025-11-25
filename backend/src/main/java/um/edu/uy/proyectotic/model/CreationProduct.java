@@ -1,5 +1,7 @@
 package um.edu.uy.proyectotic.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -10,7 +12,8 @@ public class CreationProduct {
 
   @EmbeddedId
   private CreationProductId id;
-
+  
+  @JsonIgnore
   @ManyToOne(fetch = FetchType.LAZY)
   @MapsId("creationId")
   @JoinColumn(name = "creation_id")

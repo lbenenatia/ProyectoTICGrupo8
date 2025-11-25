@@ -27,7 +27,8 @@ const CartPage = () => {
     getLastFiveOrders,
     addToCart,
     removeFromCart,
-    updateQty
+    updateQty,
+    syncOrderFromBackend,
   } = useCart();
 
   useEffect(() => {
@@ -85,6 +86,23 @@ const CartPage = () => {
       alert(`Tarjeta ${brand} **** ${last4} agregada correctamente `);
     }
   };
+
+  useEffect(() => {
+    if (orders.length === 0) return;
+
+    if (activeTab === "tracking") {
+      orders.forEach(o => syncOrderFromBackend(o.id));
+    }
+
+    // Refrescar automáticamente
+    const interval = setInterval(() => {
+      if (activeTab === "tracking") {
+        orders.forEach(o => syncOrderFromBackend(o.id));
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [orders, activeTab]);
 
   const handleSelectCard = (cardId) => {
     setSelectedPaymentMethod('card');

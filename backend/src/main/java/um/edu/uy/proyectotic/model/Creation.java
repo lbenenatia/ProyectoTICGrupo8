@@ -8,6 +8,8 @@ import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Entity
 @Table(name = "creation")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
@@ -17,7 +19,8 @@ public class Creation {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "creation_id")
   private Long id;
-
+  
+  @JsonIgnore
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "order_id", nullable = false)
   private PurchaseOrder order;
