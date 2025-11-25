@@ -20,28 +20,24 @@ public class TicketService {
     private final TicketRepository ticketRepository;
 
     @Transactional
-    public Ticket generateTicket(Long orderId, PaymentMethod paymentMethod) {
+    public Ticket generateTicket(String orderId, PaymentMethod paymentMethod) {
         PurchaseOrder order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
 
         if (order.getTicket() != null)
             throw new RuntimeException("Este pedido ya tiene un ticket");
 
-        BigDecimal subtotal = order.getTotal();
-        BigDecimal tax = subtotal.multiply(BigDecimal.valueOf(0.18)); // IVA 18%
-        BigDecimal total = subtotal.add(tax);
+        BigDecimal total = order.getTotal();
 
         Ticket ticket = Ticket.builder()
                 .id("TCK-" + UUID.randomUUID().toString().substring(0, 8))
                 .order(order)
                 .emissionDate(LocalDate.now())
-                .subtotal(subtotal)
-                .tax(tax)
                 .total(total)
                 .paymentMethod(paymentMethod)
                 .build();
 
-        order.setStatus(OrderStatus.PAGADO);
+        order.setStatus(OrderStatus.PREPARING);
         orderRepository.save(order);
 
         return ticketRepository.save(ticket);

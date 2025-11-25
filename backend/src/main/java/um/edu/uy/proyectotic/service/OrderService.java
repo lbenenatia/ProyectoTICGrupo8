@@ -26,7 +26,7 @@ public class OrderService {
         PurchaseOrder order = PurchaseOrder.builder()
                 .user(user)
                 .creationDate(LocalDateTime.now())
-                .status(OrderStatus.CREADO)
+                .status(OrderStatus.QUEUE)
                 .total(BigDecimal.ZERO)
                 .build();
 
@@ -39,8 +39,23 @@ public class OrderService {
         return orderRepository.findAllByUser(user);
     }
 
-    public PurchaseOrder getOrderById(Long orderId) {
+    public PurchaseOrder getOrderById(String orderId) {
         return orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
+    }
+
+    public List<PurchaseOrder> getAllOrders() {
+        return orderRepository.findAll();
+    }
+
+    public PurchaseOrder updateOrderStatus(String orderId, OrderStatus newStatus) {
+        PurchaseOrder order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+        order.setStatus(newStatus);
+        return orderRepository.save(order);
+    }
+
+    public List<PurchaseOrder> getOrdersByUserEmail(String userEmail) {
+        return orderRepository.findByUserEmail(userEmail);
     }
 }

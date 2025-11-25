@@ -17,7 +17,7 @@ public class PurchaseOrder {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "order_id")
-  private Long id;
+  private String id;
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id", nullable = false)
@@ -28,7 +28,7 @@ public class PurchaseOrder {
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 20)
-  private OrderStatus status = OrderStatus.CREADO;
+  private OrderStatus status = OrderStatus.QUEUE;
 
   @Column(nullable = false, precision = 10, scale = 2)
   private BigDecimal total = BigDecimal.ZERO;

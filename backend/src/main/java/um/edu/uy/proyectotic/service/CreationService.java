@@ -20,7 +20,7 @@ public class CreationService {
     private final CreationProductRepository creationProductRepository;
 
     @Transactional
-    public Creation createCreation(Long orderId, CreationType type, String size, List<Long> productIds) {
+    public Creation createCreation(String orderId, CreationType type, String size, List<Long> productIds) {
         PurchaseOrder order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
 
@@ -28,7 +28,6 @@ public class CreationService {
                 .order(order)
                 .type(type)
                 .size(size)
-                .basePrice(BigDecimal.ZERO)
                 .totalPrice(BigDecimal.ZERO)
                 .build();
 

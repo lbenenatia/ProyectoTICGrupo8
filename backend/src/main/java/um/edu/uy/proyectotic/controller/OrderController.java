@@ -26,7 +26,7 @@ public class OrderController {
 
     @PostMapping("/{orderId}/add-creation")
     public ResponseEntity<Creation> addCreation(
-            @PathVariable Long orderId,
+            @PathVariable String orderId,
             @RequestParam CreationType type,
             @RequestParam String size,
             @RequestBody List<Long> productIds
@@ -36,7 +36,7 @@ public class OrderController {
 
     @PostMapping("/{orderId}/generate-ticket")
     public ResponseEntity<Ticket> generateTicket(
-            @PathVariable Long orderId,
+            @PathVariable String orderId,
             @RequestParam PaymentMethod method
     ) {
         return ResponseEntity.ok(ticketService.generateTicket(orderId, method));
@@ -48,7 +48,7 @@ public class OrderController {
     }
 
     @GetMapping("/{orderId}")
-    public ResponseEntity<PurchaseOrder> getOrderById(@PathVariable Long orderId) {
+    public ResponseEntity<PurchaseOrder> getOrderById(@PathVariable String orderId) {
         return ResponseEntity.ok(orderService.getOrderById(orderId));
     }
 }

@@ -29,9 +29,6 @@ public class Creation {
   @Column(nullable = false, length = 20)
   private String size;
 
-  @Column(name = "base_price", nullable = false, precision = 10, scale = 2)
-  private BigDecimal basePrice = BigDecimal.ZERO;
-
   @Column(name = "total_price", nullable = false, precision = 10, scale = 2)
   private BigDecimal totalPrice = BigDecimal.ZERO;
 

@@ -18,8 +18,8 @@ public class SecurityConfig {
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/admin/**").permitAll()
-                .anyRequest().permitAll() // Cambiar a permitAll para testing
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/user/**").authenticated()
             );
         return http.build();
     }

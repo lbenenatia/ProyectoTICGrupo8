@@ -8,8 +8,6 @@ import java.time.LocalDate;
 public record TicketResponse(
     String id,
     LocalDate emissionDate,
-    BigDecimal subtotal,
-    BigDecimal tax,
     BigDecimal total,
     PaymentMethod paymentMethod
 ) {
@@ -17,8 +15,6 @@ public record TicketResponse(
         return new TicketResponse(
             t.getId(),
             t.getEmissionDate(),
-            t.getSubtotal(),
-            t.getTax(),
             t.getTotal(),
             t.getPaymentMethod()
         );

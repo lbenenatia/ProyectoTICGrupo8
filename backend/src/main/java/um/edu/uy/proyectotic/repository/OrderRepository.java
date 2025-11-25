@@ -6,6 +6,8 @@ import um.edu.uy.proyectotic.model.User;
 
 import java.util.List;
 
-public interface OrderRepository extends JpaRepository<PurchaseOrder, Long> {
+public interface OrderRepository extends JpaRepository<PurchaseOrder, String> {
   List<PurchaseOrder> findAllByUser(User user);
+
+  List<PurchaseOrder> findByUserEmail(String userEmail);
 }
