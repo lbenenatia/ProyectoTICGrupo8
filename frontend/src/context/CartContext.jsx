@@ -37,7 +37,7 @@ export const CartProvider = ({ children }) => {
   const [favorites, setFavorites] = useState([]);
 
   // -------------------------------------------------------------
-  // Load localStorage when user changes
+  // Load localStorage cuando cambia el usuario
   // -------------------------------------------------------------
   useEffect(() => {
     if (!user) {
@@ -61,7 +61,7 @@ export const CartProvider = ({ children }) => {
   }, [userKey, user]);
 
   // -------------------------------------------------------------
-  // Persist changes
+  // Persistencia
   // -------------------------------------------------------------
   useEffect(() => {
     if (!user) return;
@@ -87,6 +87,7 @@ export const CartProvider = ({ children }) => {
     setItems((prev) => {
       const cleanedPrev = cleanCartItems(prev);
 
+      // 🔹 Productos personalizados (BuildYourOwn)
       if (isCustomProduct) {
         const newItem = {
           id: product.id || `custom-${Date.now()}`,
@@ -97,6 +98,7 @@ export const CartProvider = ({ children }) => {
         return [...cleanedPrev, newItem];
       }
 
+      // 🔹 Productos del menú normal
       const { size, customizations, ingredients = [] } = options;
 
       const idx = cleanedPrev.findIndex(
@@ -175,21 +177,63 @@ export const CartProvider = ({ children }) => {
   const clearFavorites = () => setFavorites([]);
 
   // -------------------------------------------------------------
-  // PLACE ORDER (BACKEND REAL)
+  // HELPERS PARA PLACE ORDER
   // -------------------------------------------------------------
-  const placeOrder = async () => {
-    if (items.length === 0) return null;
 
-    const mapCreationType = (type) => {
-      if (!type) return "PIZZA";
-      const t = type.toString().toUpperCase();
-      if (t.includes("PIZZA")) return "PIZZA";
-      if (t.includes("BURGER")) return "BURGER";
-      if (t.includes("BOTH") || t.includes("COMBO")) return "BOTH";
-      return "PIZZA";
-    };
+  /**
+   * Construye la lista de productIds que espera el backend
+   * a partir de un item del carrito.
+   */
+  const buildProductIdsFromItem = (item) => {
+    const idsSet = new Set();
 
-    const mapPaymentMethod = () => "TARJETA";
+    // 🔹 Producto base del menú (si existe)
+    if (item.product?.id) {
+      idsSet.add(item.product.id);
+    }
+
+    // 🔹 Custom product (BuildYourOwn): ingredientes + extras
+    const customData = item.customProduct?.customData;
+
+    if (customData?.ingredients) {
+      customData.ingredients.forEach((ing) => {
+        if (ing?.id) idsSet.add(ing.id);
+      });
+    }
+
+    if (customData?.extras) {
+      customData.extras.forEach((extra) => {
+        if (extra?.id) idsSet.add(extra.id);
+      });
+    }
+
+    // 🔹 Ingredientes extra en productos normales
+    if (item.ingredients) {
+      item.ingredients.forEach((ing) => {
+        if (ing?.id) idsSet.add(ing.id);
+      });
+    }
+
+    return Array.from(idsSet);
+  };
+
+  const mapCreationType = (type) => {
+    if (!type) return "PIZZA";
+    const t = type.toString().toUpperCase();
+    if (t.includes("PIZZA")) return "PIZZA";
+    if (t.includes("BURGER")) return "BURGER";
+    if (t.includes("BOTH") || t.includes("COMBO")) return "BOTH";
+    return "PIZZA";
+  };
+
+  const mapPaymentMethod = (methodFromUI) => {
+    return "TARJETA";
+  };
+
+
+  const placeOrder = async (deliveryOption, paymentOption) => {
+    const currentItems = cleanCartItems(items);
+    if (currentItems.length === 0) return null;
 
     try {
       const user = JSON.parse(localStorage.getItem("user"));
@@ -204,48 +248,74 @@ export const CartProvider = ({ children }) => {
         { method: "POST" }
       );
 
-      if (!orderRes.ok) return null;
+      if (!orderRes.ok) {
+        console.error("Error creando order:", await orderRes.text());
+        return null;
+      }
 
       const order = await orderRes.json();
 
-      // 2) Para cada producto → agregar creación
-      for (const item of items) {
-        let productIds = [];
+      // 2) Para cada item del carrito -> agregar creaciones
+      for (const item of currentItems) {
+        const productIds = buildProductIdsFromItem(item);
 
-        if (item.customProduct?.customData?.ingredients) {
-          productIds = item.customProduct.customData.ingredients.map((i) => i.id);
-        } else if (item.ingredients) {
-          productIds = item.ingredients.map((i) => i.id);
+        if (productIds.length === 0) {
+          console.warn("Item sin productIds, se salta:", item);
+          continue;
         }
 
-        const type = item.customProduct
-          ? item.customProduct.type?.toUpperCase()
-          : item.product?.type || "PIZZA";
+        // Tipo y tamaño
+        let type;
+        let size;
 
-        const size = item.size || "MEDIUM";
+        if (item.customProduct?.customData) {
+          type = item.customProduct.customData.type;
+          size = item.customProduct.customData.size;
+        } else {
+          type = item.product?.type || "PIZZA";
+          size = item.size || "MEDIUM";
+        }
 
-        await fetch(
-          `http://localhost:4028/api/orders/${order.id}/add-creation?type=${mapCreationType(
-            type
-          )}&size=${size}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(productIds),
-          }
-        );
+        const creationType = mapCreationType(type);
+        const qty = item.qty || 1;
+
+        // 🔹 Si el usuario pidió 2 o más, creamos N creaciones
+        for (let k = 0; k < qty; k++) {
+          await fetch(
+            `http://localhost:4028/api/orders/${order.id}/add-creation?type=${creationType}&size=${size}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(productIds),
+            }
+          );
+        }
       }
 
-      // 3) Generar ticket
+      // 3) Generar ticket (con el total que YA calculó el backend)
       await fetch(
-        `http://localhost:4028/api/orders/${order.id}/generate-ticket?method=${mapPaymentMethod()}`,
+        `http://localhost:4028/api/orders/${order.id}/generate-ticket?method=${mapPaymentMethod(
+          paymentOption
+        )}`,
         { method: "POST" }
       );
 
-      // 4) Guardar local + total real
-      setOrders((prev) => [...prev, { ...order, total }]);
-      clearCart();
+      // 4) Consultar el pedido actualizado (con total correcto) y guardarlo en front
+      try {
+        const refreshed = await fetch(
+          `http://localhost:4028/api/orders/${order.id}`
+        );
+        const orderFromBackend = refreshed.ok
+          ? await refreshed.json()
+          : order;
 
+        setOrders((prev) => [...prev, orderFromBackend]);
+      } catch {
+        // Si falla, al menos guardamos el order inicial
+        setOrders((prev) => [...prev, order]);
+      }
+
+      clearCart();
       return order;
     } catch (err) {
       console.error("Error creando pedido:", err);
@@ -266,7 +336,9 @@ export const CartProvider = ({ children }) => {
   // -------------------------------------------------------------
   const syncOrderFromBackend = async (orderId) => {
     try {
-      const response = await fetch(`http://localhost:4028/api/orders/${orderId}`);
+      const response = await fetch(
+        `http://localhost:4028/api/orders/${orderId}`
+      );
       if (!response.ok) return;
 
       const updated = await response.json();
