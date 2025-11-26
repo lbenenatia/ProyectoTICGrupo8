@@ -92,7 +92,6 @@ const CardModal = ({ isOpen, onClose, onSave, card }) => {
   const validateForm = () => {
     const newErrors = {};
 
-    // Solo validar número si estamos agregando una nueva tarjeta o si se proporcionó
     if (!card || formData.cardNumber) {
       if (formData.cardNumber.replace(/\s/g, '').length !== 16) {
         newErrors.cardNumber = true;
@@ -107,7 +106,6 @@ const CardModal = ({ isOpen, onClose, onSave, card }) => {
       newErrors.cardExpiry = true;
     }
 
-    // Solo validar CVV si estamos agregando una nueva tarjeta o si se proporcionó
     if (!card || formData.cardCVV) {
       if (formData.cardCVV.length !== 3) {
         newErrors.cardCVV = true;
@@ -125,23 +123,21 @@ const CardModal = ({ isOpen, onClose, onSave, card }) => {
       return;
     }
 
-    // Preparar datos para guardar
     const dataToSave = {
       cardHolder: formData.cardHolder,
-      holder: formData.cardHolder, // Compatibilidad
+      holder: formData.cardHolder, 
       cardExpiry: formData.cardExpiry,
-      expiry: formData.cardExpiry // Compatibilidad
+      expiry: formData.cardExpiry 
     };
 
-    // Solo incluir número y CVV si se proporcionaron
     if (formData.cardNumber) {
       dataToSave.cardNumber = formData.cardNumber;
-      dataToSave.number = formData.cardNumber; // Compatibilidad
+      dataToSave.number = formData.cardNumber; 
     }
 
     if (formData.cardCVV) {
       dataToSave.cardCVV = formData.cardCVV;
-      dataToSave.cvv = formData.cardCVV; // Compatibilidad
+      dataToSave.cvv = formData.cardCVV; 
     }
 
     onSave(dataToSave);

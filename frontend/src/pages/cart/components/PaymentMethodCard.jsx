@@ -1,10 +1,16 @@
+// 🔥 PaymentMethodCard.jsx — Versión fusionada
 import React, { useState, useEffect } from "react";
 import Button from "../../../components/ui/Button";
 import Icon from "../../../components/AppIcon";
 import CardModal from "../../../components/ui/CardModal";
 import { useAuth } from "context/AuthContext";
 
-const PaymentMethodCard = ({ selectedMethod, onMethodChange, selectedCard, onCardSelect }) => {
+const PaymentMethodCard = ({
+  selectedMethod,
+  onMethodChange,
+  selectedCard,
+  onCardSelect,
+}) => {
   const { user } = useAuth();
 
   const [cards, setCards] = useState([]);
@@ -17,16 +23,19 @@ const PaymentMethodCard = ({ selectedMethod, onMethodChange, selectedCard, onCar
     return `savedCards_${email}`;
   };
 
+  // 🔥 Cargar tarjetas del usuario
   useEffect(() => {
     if (!user?.email) return;
 
     const cardsKey = getCardsKey();
     const saved = localStorage.getItem(cardsKey);
+
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         setCards(parsed);
 
+        // Si no hay seleccionada, seleccionar la última
         if (parsed.length > 0 && !selectedCard) {
           onCardSelect && onCardSelect(parsed[parsed.length - 1].id);
         }
@@ -38,23 +47,26 @@ const PaymentMethodCard = ({ selectedMethod, onMethodChange, selectedCard, onCar
     }
   }, [user]);
 
+  // 🔥 Ocultar mensaje después de 3s
   useEffect(() => {
     if (!successMessage) return;
     const t = setTimeout(() => setSuccessMessage(""), 3000);
     return () => clearTimeout(t);
   }, [successMessage]);
 
+  // 🔥 Guardar tarjeta (nuevo + edición)
   const handleSaveCard = (cardData) => {
     const cardsKey = getCardsKey();
 
     if (editingCard) {
+      // Edición
       const updated = cards.map((card) =>
         card.id === editingCard.id
           ? {
               ...card,
               ...cardData,
               id: editingCard.id,
-              number: cardData.number || editingCard.number,
+              number: cardData.number || cardData.cardNumber || editingCard.number,
             }
           : card
       );
@@ -68,6 +80,7 @@ const PaymentMethodCard = ({ selectedMethod, onMethodChange, selectedCard, onCar
 
       setSuccessMessage("Tarjeta actualizada correctamente.");
     } else {
+      // Nueva tarjeta
       const newCard = {
         ...cardData,
         id: Date.now(),
@@ -77,7 +90,6 @@ const PaymentMethodCard = ({ selectedMethod, onMethodChange, selectedCard, onCar
       };
 
       const updated = [...cards, newCard];
-
       setCards(updated);
       localStorage.setItem(cardsKey, JSON.stringify(updated));
 
@@ -101,6 +113,7 @@ const PaymentMethodCard = ({ selectedMethod, onMethodChange, selectedCard, onCar
     const cardsKey = getCardsKey();
     localStorage.setItem(cardsKey, JSON.stringify(updated));
 
+    // Si elimino la seleccionada → seleccionar otra
     if (selectedCard === id) {
       const newSelected = updated.length > 0 ? updated[0].id : null;
       onCardSelect && onCardSelect(newSelected);
@@ -117,6 +130,10 @@ const PaymentMethodCard = ({ selectedMethod, onMethodChange, selectedCard, onCar
   const handleAddNewCard = () => {
     setEditingCard(null);
     setShowCardModal(true);
+  };
+
+  const handleSelectCard = (cardId) => {
+    onCardSelect && onCardSelect(cardId);
   };
 
   const getCardBrand = (number) => {
@@ -144,12 +161,15 @@ const PaymentMethodCard = ({ selectedMethod, onMethodChange, selectedCard, onCar
           {paymentMethods.map((method) => (
             <div
               key={method.id}
-              onClick={() => onMethodChange(method.id)}
               className={`p-4 rounded-lg border-2 cursor-pointer transition-warm ${
                 selectedMethod === method.id
                   ? "border-primary bg-primary/5"
                   : "border-border hover:border-primary/50"
               }`}
+              onClick={() => {
+                onMethodChange(method.id);
+                setSuccessMessage("");
+              }}
             >
               <div className="flex items-center space-x-3">
                 <div
@@ -161,16 +181,15 @@ const PaymentMethodCard = ({ selectedMethod, onMethodChange, selectedCard, onCar
                 >
                   <Icon name={method.icon} size={20} />
                 </div>
-
-                <h4 className="font-medium text-text-primary">{method.title}</h4>
+                <h4 className="font-medium text-text-primary">
+                  {method.title}
+                </h4>
               </div>
             </div>
           ))}
         </div>
 
-        {/* -------
-             TARJETAS
-        ------- */}
+        {/* Tarjetas */}
         {selectedMethod === "card" && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -199,7 +218,7 @@ const PaymentMethodCard = ({ selectedMethod, onMethodChange, selectedCard, onCar
                 {cards.map((card) => (
                   <div
                     key={card.id}
-                    onClick={() => onCardSelect(card.id)}
+                    onClick={() => handleSelectCard(card.id)}
                     className={`p-4 bg-background rounded-lg border-2 cursor-pointer transition-all duration-200 ${
                       selectedCard === card.id
                         ? "border-primary bg-primary/5 shadow-sm"
@@ -218,16 +237,16 @@ const PaymentMethodCard = ({ selectedMethod, onMethodChange, selectedCard, onCar
                             size={16}
                           />
                           <p className="font-medium text-text-primary">
-                            {getCardBrand(card.number)} ••••{" "}
-                            {String(card.number).slice(-4)}
+                            {getCardBrand(card.number || card.cardNumber)} ••••{" "}
+                            {String(card.number || card.cardNumber).slice(-4)}
                           </p>
                         </div>
 
                         <p className="text-sm text-text-secondary">
-                          {card.holder}
+                          {card.holder || card.cardHolder}
                         </p>
                         <p className="text-sm text-text-secondary">
-                          Vence {card.expiry}
+                          Vence {card.expiry || card.cardExpiry}
                         </p>
                       </div>
 
@@ -258,7 +277,11 @@ const PaymentMethodCard = ({ selectedMethod, onMethodChange, selectedCard, onCar
               </div>
             ) : (
               <div className="text-center py-8 bg-background rounded-lg border border-border">
-                <Icon name="CreditCard" size={48} className="text-text-secondary mx-auto mb-3" />
+                <Icon
+                  name="CreditCard"
+                  size={48}
+                  className="text-text-secondary mx-auto mb-3"
+                />
                 <p className="text-sm text-text-secondary mb-4">
                   No hay tarjetas guardadas.
                 </p>
@@ -294,7 +317,6 @@ const PaymentMethodCard = ({ selectedMethod, onMethodChange, selectedCard, onCar
         )}
       </div>
 
-      {/* Modal */}
       <CardModal
         isOpen={showCardModal}
         onClose={() => {

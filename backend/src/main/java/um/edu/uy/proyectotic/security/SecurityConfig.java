@@ -19,7 +19,7 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/admin/**").permitAll()
-                .anyRequest().permitAll() // Cambiar a permitAll para testing
+                .anyRequest().permitAll() 
             );
         return http.build();
     }

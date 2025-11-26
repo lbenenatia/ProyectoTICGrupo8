@@ -98,7 +98,6 @@ const AddressModal = ({ isOpen, onClose, onSave, address }) => {
       }
     });
 
-    // Validar teléfono (9 dígitos en Uruguay)
     const phoneDigits = formData.phone.replace(/\D/g, '');
     if (phoneDigits.length !== 9) {
       newErrors.phone = true;

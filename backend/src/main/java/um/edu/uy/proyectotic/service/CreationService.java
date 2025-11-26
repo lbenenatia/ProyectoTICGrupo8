@@ -25,7 +25,7 @@ public class CreationService {
         String size = sizeRaw.toLowerCase();
 
         if (type == CreationType.PIZZA) {
-            BigDecimal base = new BigDecimal("12"); // precio base pizza
+            BigDecimal base = new BigDecimal("12"); 
             BigDecimal multiplier = switch (size) {
                 case "small"  -> new BigDecimal("1.0");
                 case "medium" -> new BigDecimal("1.5");
@@ -36,7 +36,7 @@ public class CreationService {
         }
 
         if (type == CreationType.BURGER) {
-            BigDecimal base = new BigDecimal("9"); // precio base burger
+            BigDecimal base = new BigDecimal("9"); 
             BigDecimal multiplier = switch (size) {
                 case "single" -> new BigDecimal("1.0");
                 case "double" -> new BigDecimal("1.5555");
@@ -59,7 +59,6 @@ public class CreationService {
 
         BigDecimal basePrice = calculateBasePrice(type, size);
 
-        // Crear creación con precio base
         Creation creation = Creation.builder()
                 .order(order)
                 .type(type)
@@ -70,7 +69,6 @@ public class CreationService {
 
         creation = creationRepository.save(creation);
 
-        // 2) SUMAR PRECIO DE INGREDIENTES
         BigDecimal extras = BigDecimal.ZERO;
 
         for (Long productId : productIds) {
@@ -89,13 +87,11 @@ public class CreationService {
             extras = extras.add(product.getPrice());
         }
 
-        // 3) total = basePrice + extras
         BigDecimal total = basePrice.add(extras);
 
         creation.setTotalPrice(total);
         creationRepository.save(creation);
 
-        // 4) Actualizar total del pedido
         order.setTotal(order.getTotal().add(total));
         orderRepository.save(order);
 

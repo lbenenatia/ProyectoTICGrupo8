@@ -44,7 +44,6 @@ public class ProductController {
         }
     }
 
-    // NUEVO ENDPOINT: Ingredientes (incluye toppings)
     @GetMapping("/ingredients/{type}")
     public Map<String, List<ProductDto>> getIngredients(@PathVariable String type) {
         System.out.println("============ INGREDIENTS ENDPOINT ============");
@@ -54,11 +53,9 @@ public class ProductController {
             CreationType creationType = CreationType.valueOf(type.toUpperCase());
             Map<String, List<ProductDto>> result = new HashMap<>();
             
-            // Obtener ingredientes específicos del tipo (PIZZA o BURGER)
             Map<String, List<ProductDto>> specificIngredients = productService.getProductsByCreationType(creationType);
             result.putAll(specificIngredients);
             
-            // Agregar toppings (categoría BOTH llamada "Toppings")
             Map<String, List<ProductDto>> bothProducts = productService.getProductsByCreationType(CreationType.BOTH);
             if (bothProducts.containsKey("Toppings")) {
                 result.put("toppings", bothProducts.get("Toppings"));
@@ -76,7 +73,6 @@ public class ProductController {
         }
     }
 
-    // NUEVO ENDPOINT: Extras (según tipo)
     @GetMapping("/extras/{type}")
     public Map<String, List<ProductDto>> getExtras(@PathVariable String type) {
         System.out.println("============ EXTRAS ENDPOINT ============");
@@ -86,17 +82,13 @@ public class ProductController {
             CreationType creationType = CreationType.valueOf(type.toUpperCase());
             Map<String, List<ProductDto>> result = new HashMap<>();
             
-            // Obtener todos los productos BOTH
             Map<String, List<ProductDto>> bothProducts = productService.getProductsByCreationType(CreationType.BOTH);
             
-            // Filtrar según el tipo de producto
             if (creationType == CreationType.PIZZA) {
-                // Para PIZZA: solo bebida
                 if (bothProducts.containsKey("Bebida")) {
                     result.put("bebida", bothProducts.get("Bebida"));
                 }
             } else if (creationType == CreationType.BURGER) {
-                // Para BURGER: bebida y acompañamiento
                 if (bothProducts.containsKey("Bebida")) {
                     result.put("bebida", bothProducts.get("Bebida"));
                 }

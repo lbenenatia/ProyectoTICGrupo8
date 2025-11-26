@@ -17,13 +17,10 @@ public class UserOrdersController {
 
     private final OrderService orderService;
 
-    /**
-     * Obtiene los pedidos del usuario autenticado
-     */
+
     @GetMapping
     public ResponseEntity<List<PurchaseOrder>> getMyOrders(Authentication authentication) {
         try {
-            // Obtiene el email del usuario autenticado
             String userEmail = authentication.getName();
             List<PurchaseOrder> orders = orderService.getOrdersByUser(userEmail);
             return ResponseEntity.ok(orders);
@@ -33,9 +30,6 @@ public class UserOrdersController {
         }
     }
 
-    /**
-     * Obtiene un pedido específico del usuario autenticado
-     */
     @GetMapping("/{orderId}")
     public ResponseEntity<PurchaseOrder> getMyOrder(
             @PathVariable Long orderId,
@@ -45,9 +39,8 @@ public class UserOrdersController {
             String userEmail = authentication.getName();
             PurchaseOrder order = orderService.getOrderById(orderId);
             
-            // Verifica que el pedido pertenezca al usuario
             if (!order.getUser().getEmail().equals(userEmail)) {
-                return ResponseEntity.status(403).build(); // Forbidden
+                return ResponseEntity.status(403).build(); 
             }
             
             return ResponseEntity.ok(order);

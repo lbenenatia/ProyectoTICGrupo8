@@ -1,3 +1,4 @@
+// 🔥 CartContext.jsx — Versión final fusionada
 import React, {
   createContext,
   useContext,
@@ -9,6 +10,9 @@ import { useAuth } from "../context/AuthContext";
 
 const CartContext = createContext(null);
 
+// -------------------------------
+// Helpers
+// -------------------------------
 function safeParseArray(raw) {
   try {
     const parsed = JSON.parse(raw);
@@ -36,9 +40,9 @@ export const CartProvider = ({ children }) => {
   const [orders, setOrders] = useState([]);
   const [favorites, setFavorites] = useState([]);
 
-  // -------------------------------------------------------------
-  // Load localStorage cuando cambia el usuario
-  // -------------------------------------------------------------
+  // -------------------------------
+  // Load storage
+  // -------------------------------
   useEffect(() => {
     if (!user) {
       setItems([]);
@@ -60,34 +64,45 @@ export const CartProvider = ({ children }) => {
     setFavorites(safeParseArray(favsRaw));
   }, [userKey, user]);
 
-  // -------------------------------------------------------------
-  // Persistencia
-  // -------------------------------------------------------------
+  // -------------------------------
+  // Persist storage
+  // -------------------------------
   useEffect(() => {
     if (!user) return;
-    localStorage.setItem(`cart_${userKey}`, JSON.stringify(items));
+    try {
+      localStorage.setItem(`cart_${userKey}`, JSON.stringify(items));
+    } catch (err) {
+      console.error("Error guardando carrito:", err);
+    }
   }, [items, userKey, user]);
 
   useEffect(() => {
     if (!user) return;
-    localStorage.setItem(`orders_${userKey}`, JSON.stringify(orders));
+    try {
+      localStorage.setItem(`orders_${userKey}`, JSON.stringify(orders));
+    } catch (err) {
+      console.error("Error guardando orders:", err);
+    }
   }, [orders, userKey, user]);
 
   useEffect(() => {
     if (!user) return;
-    localStorage.setItem(`favorites_${userKey}`, JSON.stringify(favorites));
+    try {
+      localStorage.setItem(`favorites_${userKey}`, JSON.stringify(favorites));
+    } catch (err) {
+      console.error("Error guardando favoritos:", err);
+    }
   }, [favorites, userKey, user]);
 
-  // -------------------------------------------------------------
-  // CART FUNCTIONS
-  // -------------------------------------------------------------
+  // -------------------------------
+  // ADD TO CART
+  // -------------------------------
   const addToCart = (product, options = {}, qty = 1) => {
     const isCustomProduct = product?.customData !== undefined;
 
     setItems((prev) => {
       const cleanedPrev = cleanCartItems(prev);
 
-      // 🔹 Productos personalizados (BuildYourOwn)
       if (isCustomProduct) {
         const newItem = {
           id: product.id || `custom-${Date.now()}`,
@@ -98,14 +113,12 @@ export const CartProvider = ({ children }) => {
         return [...cleanedPrev, newItem];
       }
 
-      // 🔹 Productos del menú normal
       const { size, customizations, ingredients = [] } = options;
 
       const idx = cleanedPrev.findIndex(
         (i) =>
           i.product?.id === product?.id &&
-          JSON.stringify(i.ingredients || []) ===
-            JSON.stringify(ingredients || []) &&
+          JSON.stringify(i.ingredients || []) === JSON.stringify(ingredients || []) &&
           i.size === size
       );
 
@@ -129,6 +142,9 @@ export const CartProvider = ({ children }) => {
     });
   };
 
+  // -------------------------------
+  // UPDATE / REMOVE
+  // -------------------------------
   const updateQty = (id, qty) =>
     setItems((prev) =>
       cleanCartItems(prev).map((i) =>
@@ -136,15 +152,14 @@ export const CartProvider = ({ children }) => {
       )
     );
 
-  const removeFromCart = (id) => {
+  const removeFromCart = (id) =>
     setItems((prev) => cleanCartItems(prev).filter((i) => i.id !== id));
-  };
 
   const clearCart = () => setItems([]);
 
-  // -------------------------------------------------------------
-  // FAVORITES
-  // -------------------------------------------------------------
+  // -------------------------------
+  // FAVORITOS
+  // -------------------------------
   const addToFavorites = (recipe) => {
     const newFavorite = {
       id: `FAV-${Date.now()}`,
@@ -171,48 +186,27 @@ export const CartProvider = ({ children }) => {
   };
 
   const removeFromFavorites = (favoriteId) => {
-    setFavorites((prev) => prev.filter((fav) => fav.id !== favoriteId));
+    setFavorites((prev) =>
+      (Array.isArray(prev) ? prev : []).filter((fav) => fav.id !== favoriteId)
+    );
   };
 
-  const clearFavorites = () => setFavorites([]);
-
-  // -------------------------------------------------------------
-  // HELPERS PARA PLACE ORDER
-  // -------------------------------------------------------------
-
-  /**
-   * Construye la lista de productIds que espera el backend
-   * a partir de un item del carrito.
-   */
+  // ---------------------------------
+  // Helpers
+  // ---------------------------------
   const buildProductIdsFromItem = (item) => {
     const idsSet = new Set();
 
-    // 🔹 Producto base del menú (si existe)
-    if (item.product?.id) {
-      idsSet.add(item.product.id);
-    }
+    if (item.product?.id) idsSet.add(item.product.id);
 
-    // 🔹 Custom product (BuildYourOwn): ingredientes + extras
     const customData = item.customProduct?.customData;
+    if (customData?.ingredients)
+      customData.ingredients.forEach((i) => i?.id && idsSet.add(i.id));
+    if (customData?.extras)
+      customData.extras.forEach((e) => e?.id && idsSet.add(e.id));
 
-    if (customData?.ingredients) {
-      customData.ingredients.forEach((ing) => {
-        if (ing?.id) idsSet.add(ing.id);
-      });
-    }
-
-    if (customData?.extras) {
-      customData.extras.forEach((extra) => {
-        if (extra?.id) idsSet.add(extra.id);
-      });
-    }
-
-    // 🔹 Ingredientes extra en productos normales
-    if (item.ingredients) {
-      item.ingredients.forEach((ing) => {
-        if (ing?.id) idsSet.add(ing.id);
-      });
-    }
+    if (item.ingredients)
+      item.ingredients.forEach((ing) => ing?.id && idsSet.add(ing.id));
 
     return Array.from(idsSet);
   };
@@ -220,17 +214,18 @@ export const CartProvider = ({ children }) => {
   const mapCreationType = (type) => {
     if (!type) return "PIZZA";
     const t = type.toString().toUpperCase();
+
     if (t.includes("PIZZA")) return "PIZZA";
     if (t.includes("BURGER")) return "BURGER";
-    if (t.includes("BOTH") || t.includes("COMBO")) return "BOTH";
+    if (t.includes("BOTH")) return "BOTH";
     return "PIZZA";
   };
 
-  const mapPaymentMethod = (methodFromUI) => {
-    return "TARJETA";
-  };
+  const mapPaymentMethod = () => "TARJETA";
 
-
+  // ---------------------------------
+  // ✔ placeOrder REAL (tu versión)
+  // ---------------------------------
   const placeOrder = async (deliveryOption, paymentOption) => {
     const currentItems = cleanCartItems(items);
     if (currentItems.length === 0) return null;
@@ -242,47 +237,34 @@ export const CartProvider = ({ children }) => {
         return null;
       }
 
-      // 1) Crear pedido
       const orderRes = await fetch(
-        `http://localhost:4028/api/orders/create/${user.email}`,
+        `http://localhost:4028/api/orders/create/${user.email}?deliveryType=${deliveryOption}`,
         { method: "POST" }
       );
 
-      if (!orderRes.ok) {
-        console.error("Error creando order:", await orderRes.text());
-        return null;
-      }
+      if (!orderRes.ok) return null;
 
       const order = await orderRes.json();
 
-      // 2) Para cada item del carrito -> agregar creaciones
       for (const item of currentItems) {
         const productIds = buildProductIdsFromItem(item);
+        if (productIds.length === 0) continue;
 
-        if (productIds.length === 0) {
-          console.warn("Item sin productIds, se salta:", item);
-          continue;
-        }
-
-        // Tipo y tamaño
-        let type;
-        let size;
+        let type, size;
 
         if (item.customProduct?.customData) {
-          type = item.customProduct.customData.type;
+          type = mapCreationType(item.customProduct.customData.type);
           size = item.customProduct.customData.size;
         } else {
-          type = item.product?.type || "PIZZA";
+          type = mapCreationType(item.product?.type || "PIZZA");
           size = item.size || "MEDIUM";
         }
 
-        const creationType = mapCreationType(type);
         const qty = item.qty || 1;
 
-        // 🔹 Si el usuario pidió 2 o más, creamos N creaciones
         for (let k = 0; k < qty; k++) {
           await fetch(
-            `http://localhost:4028/api/orders/${order.id}/add-creation?type=${creationType}&size=${size}`,
+            `http://localhost:4028/api/orders/${order.id}/add-creation?type=${type}&size=${size}`,
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -292,7 +274,6 @@ export const CartProvider = ({ children }) => {
         }
       }
 
-      // 3) Generar ticket (con el total que YA calculó el backend)
       await fetch(
         `http://localhost:4028/api/orders/${order.id}/generate-ticket?method=${mapPaymentMethod(
           paymentOption
@@ -300,64 +281,55 @@ export const CartProvider = ({ children }) => {
         { method: "POST" }
       );
 
-      // 4) Consultar el pedido actualizado (con total correcto) y guardarlo en front
+      let updatedOrder = order;
       try {
         const refreshed = await fetch(
           `http://localhost:4028/api/orders/${order.id}`
         );
-        const orderFromBackend = refreshed.ok
-          ? await refreshed.json()
-          : order;
+        if (refreshed.ok) updatedOrder = await refreshed.json();
+      } catch {}
 
-        setOrders((prev) => [...prev, orderFromBackend]);
-      } catch {
-        // Si falla, al menos guardamos el order inicial
-        setOrders((prev) => [...prev, order]);
-      }
-
+      setOrders((prev) => [...prev, updatedOrder]);
       clearCart();
-      return order;
+
+      return updatedOrder;
     } catch (err) {
       console.error("Error creando pedido:", err);
       return null;
     }
   };
 
-  // -------------------------------------------------------------
-  // GET LAST FIVE ORDERS
-  // -------------------------------------------------------------
-  const getLastFiveOrders = () => {
-    const arr = Array.isArray(orders) ? orders : [];
-    return [...arr].slice(-5).reverse();
-  };
-
-  // -------------------------------------------------------------
-  // SYNC ORDER FROM BACKEND
-  // -------------------------------------------------------------
+  // ---------------------------------
+  // ✔ syncOrderFromBackend REAL (tu versión original)
+  // ---------------------------------
   const syncOrderFromBackend = async (orderId) => {
     try {
-      const response = await fetch(
-        `http://localhost:4028/api/orders/${orderId}`
-      );
-      if (!response.ok) return;
+      const res = await fetch(`http://localhost:4028/api/orders/${orderId}`);
+      if (!res.ok) return;
 
-      const updated = await response.json();
+      const updated = await res.json();
 
       setOrders((prev) => {
-        const newOrders = prev.map((o) =>
-          o.id === orderId ? updated : o
-        );
-        localStorage.setItem(`orders_${userKey}`, JSON.stringify(newOrders));
-        return newOrders;
+        const final = prev.map((o) => (o.id === orderId ? updated : o));
+        localStorage.setItem(`orders_${userKey}`, JSON.stringify(final));
+        return final;
       });
     } catch (err) {
       console.error("Error syncing order:", err);
     }
   };
 
-  // -------------------------------------------------------------
-  // TOTALS
-  // -------------------------------------------------------------
+  // ---------------------------------
+  // Last 5 orders
+  // ---------------------------------
+  const getLastFiveOrders = () => {
+    const arr = Array.isArray(orders) ? orders : [];
+    return [...arr].slice(-5).reverse();
+  };
+
+  // ---------------------------------
+  // Totales
+  // ---------------------------------
   const { cartCount, subtotal, total } = useMemo(() => {
     const safeItems = cleanCartItems(items);
 
@@ -373,44 +345,36 @@ export const CartProvider = ({ children }) => {
       return sum + (i.product?.price || 0) * qty;
     }, 0);
 
-    const total = subtotal;
-
-    return { cartCount, subtotal, total };
+    return { cartCount, subtotal, total: subtotal };
   }, [items]);
 
-  // -------------------------------------------------------------
-  const value = useMemo(
-    () => ({
-      items,
-      addToCart,
-      updateQty,
-      removeFromCart,
-      clearCart,
+  return (
+    <CartContext.Provider
+      value={{
+        items,
+        addToCart,
+        updateQty,
+        removeFromCart,
+        clearCart,
 
-      cartCount,
-      subtotal,
-      total,
+        favorites,
+        addToFavorites,
+        removeFromFavorites,
 
-      orders,
-      placeOrder,
-      setOrders,
-      getLastFiveOrders,
+        orders,
+        setOrders,
+        placeOrder,
+        syncOrderFromBackend,
+        getLastFiveOrders,
 
-      favorites,
-      addToFavorites,
-      removeFromFavorites,
-      clearFavorites,
-
-      syncOrderFromBackend,
-    }),
-    [items, cartCount, subtotal, total, orders, favorites]
+        cartCount,
+        subtotal,
+        total,
+      }}
+    >
+      {children}
+    </CartContext.Provider>
   );
-
-  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 };
 
-export const useCart = () => {
-  const ctx = useContext(CartContext);
-  if (!ctx) throw new Error("useCart must be used within a CartProvider");
-  return ctx;
-};
+export const useCart = () => useContext(CartContext);

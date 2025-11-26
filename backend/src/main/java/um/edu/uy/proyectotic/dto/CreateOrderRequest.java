@@ -9,12 +9,12 @@ public class CreateOrderRequest {
     
     private List<OrderItemDTO> items;
     private BigDecimal total;
-    private String deliveryType; // "delivery" o "pickup"
+    private String deliveryType; 
     
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor
     public static class OrderItemDTO {
-        private Long productId; // null si es producto custom
-        private CustomProductDTO customProduct; // null si es producto normal
+        private Long productId; 
+        private CustomProductDTO customProduct; 
         private Integer quantity;
         private BigDecimal price;
         private String size;
@@ -27,6 +27,6 @@ public class CreateOrderRequest {
         private String description;
         private BigDecimal price;
         private String imageUrl;
-        private Object customData; // Datos personalizados del producto
+        private Object customData; 
     }
 }

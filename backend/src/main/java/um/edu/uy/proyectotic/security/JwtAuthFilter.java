@@ -14,7 +14,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.List;
 
-// @Component - Removed to prevent auto-registration, will be manually added to security chain
 @RequiredArgsConstructor
 public class JwtAuthFilter extends OncePerRequestFilter {
 

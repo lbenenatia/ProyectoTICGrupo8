@@ -12,12 +12,9 @@ public class CardLookupService {
       throw new IllegalArgumentException("Invalid card number");
     }
 
-    // Demo: En la vida real, se consulta a un PSP o vault/tokenizador.
     String network = detectNetwork(sanitized);
     String masked = maskPan(sanitized);
 
-    // Estos datos vendrían del PSP/banco o de un vault propio
-    // (Nunca persistir PAN en claro).
     String holder = "APELLIDO, NOMBRE";
     String doc = "4.567.890-1";
     String address = "Av. Ejemplo 1234, Montevideo";

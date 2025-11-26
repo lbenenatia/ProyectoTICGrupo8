@@ -246,7 +246,6 @@ public class UserController {
             card.setCardHolder(cardData.get("cardHolder"));
             card.setCardExpiry(cardData.get("cardExpiry"));
 
-            // Solo actualizar CVV si se proporciona
             if (cardData.get("cardCVV") != null && !cardData.get("cardCVV").isEmpty()) {
                 card.setCardCVV(cardData.get("cardCVV"));
             }
@@ -255,7 +254,6 @@ public class UserController {
 
             cardRepository.save(card);
 
-            // Retornar tarjeta con número enmascarado
             Map<String, Object> cardResponse = new HashMap<>();
             cardResponse.put("id", card.getId());
             String maskedNumber = "**** **** **** " + card.getCardNumber().replaceAll("\\s", "").substring(card.getCardNumber().replaceAll("\\s", "").length() - 4);
